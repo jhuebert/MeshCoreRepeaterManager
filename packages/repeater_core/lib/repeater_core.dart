@@ -7,5 +7,6 @@ library;
 export 'src/binary_req.dart';
 export 'src/capabilities.dart';
 export 'src/cli_reply.dart';
+export 'src/reports.dart';
 export 'src/setting_spec.dart';
 export 'src/status.dart';
