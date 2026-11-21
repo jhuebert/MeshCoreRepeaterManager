@@ -1,4 +1,3 @@
-import 'package:device_link/device_link.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore_repeater_manager/app_state.dart';
