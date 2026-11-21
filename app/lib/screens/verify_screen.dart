@@ -3,7 +3,6 @@ import 'package:ota_core/ota_core.dart' show ApplyOutcome;
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
-import '../services/foreground.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/wizard.dart';
@@ -47,8 +46,12 @@ class _VerifyScreenState extends State<VerifyScreen> {
     // Apply and verification can take a couple of minutes while the node
     // reboots. TransferScreen has already stopped its own guard by now.
     try {
-      await TransferForegroundService.setScreenOn(true);
-      await TransferForegroundService.start('Applying the new firmware');
+      await app.backgroundGuard.acquire(
+        'ota-apply',
+        'Applying the new firmware',
+        text: 'Verifying the new firmware after reboot',
+        keepScreenOn: true,
+      );
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
       return;
@@ -58,8 +61,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
     } finally {
-      await TransferForegroundService.setScreenOn(false);
-      await TransferForegroundService.stop();
+      await app.backgroundGuard.release('ota-apply');
     }
   }
 
@@ -216,8 +218,12 @@ class _VerifyScreenState extends State<VerifyScreen> {
     );
     if (confirmed != true || !mounted) return;
     try {
-      await TransferForegroundService.setScreenOn(true);
-      await TransferForegroundService.start('Rolling the firmware back');
+      await app.backgroundGuard.acquire(
+        'ota-rollback',
+        'Rolling the firmware back',
+        text: 'Restoring the last good firmware',
+        keepScreenOn: true,
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -235,8 +241,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
         );
       }
     } finally {
-      await TransferForegroundService.setScreenOn(false);
-      await TransferForegroundService.stop();
+      await app.backgroundGuard.release('ota-rollback');
     }
   }
 }

@@ -170,6 +170,23 @@ class RepeaterDirectory {
   Map<String, dynamic>? get pendingIdentity =>
       _extra['pendingIdentity'] as Map<String, dynamic>?;
 
+  /// Finish an identity change interrupted between writing the pending record
+  /// and updating the index/folder. The migration is idempotent, so replaying
+  /// it is safe even if the folder was already moved. Returns the new key when
+  /// a migration was resumed, otherwise null.
+  Future<String?> resumePendingIdentity() async {
+    final pending = pendingIdentity;
+    if (pending == null) return null;
+    final old = pending['old']?.toString();
+    final next = pending['new']?.toString();
+    if (old == null || next == null || old.isEmpty || next.isEmpty) {
+      await clearPendingIdentity();
+      return null;
+    }
+    await migrateIdentity(old, next);
+    return next;
+  }
+
   Future<void> clearPendingIdentity() async {
     _extra.remove('pendingIdentity');
     await _persist();

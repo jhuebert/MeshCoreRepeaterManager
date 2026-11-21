@@ -42,6 +42,20 @@ void main() {
       expect(job.acks['Roof']!.output, 'OK');
     });
 
+    test('the owner is notified when a tracked job or ACK changes', () async {
+      var changes = 0;
+      final collector = AckCollector()..onChanged = () => changes++;
+      collector.track(FleetJobResult(
+          id: 'job-2', script: '!id job-2\nver', sentAt: DateTime.now()));
+      expect(changes, 1);
+      expect(collector.handleFrame(ackFrame('job-2 OK')), isTrue);
+      expect(changes, 2);
+      collector.forget('job-2');
+      expect(changes, 3);
+      collector.forget('missing');
+      expect(changes, 3);
+    });
+
     test('an ACK for an unknown job is ignored', () {
       final collector = AckCollector();
       expect(collector.handleFrame(ackFrame('other OK')), isFalse);
@@ -122,6 +136,27 @@ void main() {
       expect(fired, ['now']); // 'later' is not due
       await scheduler.cancel('later');
       expect(scheduler.jobs, isEmpty);
+    });
+
+    test('the queue announces when it becomes active and empty', () async {
+      final notices = <bool>[];
+      final scheduler = FleetScheduler(
+        save: (_) async {},
+        onDue: (_) async {},
+        onQueueChanged: (active) async => notices.add(active),
+      );
+      await scheduler.load([
+        ScheduledFleetJob(id: 'queued', script: 'x', dueAt: DateTime.now()),
+      ]);
+      expect(notices, [true]); // a job persisted before a restart holds a guard
+
+      await scheduler.checkNow();
+      expect(notices, [true, false]); // firing the last job releases it
+
+      await scheduler.schedule(
+          ScheduledFleetJob(id: 'cancel', script: 'x', dueAt: DateTime.now()));
+      await scheduler.cancel('cancel');
+      expect(notices, [true, false, true, false]);
     });
   });
 

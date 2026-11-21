@@ -14,6 +14,7 @@ import 'package:repeater_core/repeater_core.dart';
 
 import 'controllers/connection_controller.dart';
 import 'services/ack_collector.dart';
+import 'services/background_guard.dart';
 import 'services/capability_service.dart';
 import 'services/cli_service.dart';
 import 'services/fleet_scheduler.dart';
@@ -89,11 +90,30 @@ class AppState extends ChangeNotifier {
   AppState() {
     connection.addListener(notifyListeners);
     requestMeter.addListener(notifyListeners);
+    backgroundGuard.addListener(notifyListeners);
     connection.onAdopt = _adoptLink;
     connection.onLost = _clearNodeFacts;
     connection.onUnexpectedMessage = log_;
     connection.onDrainedFrame = (frame) => ackCollector.handleFrame(frame);
+    // A late ACK recovered from the drain is real data: save it immediately,
+    // otherwise it is lost when the app closes.
+    ackCollector.onChanged = () => unawaited(_persistFleetHistory());
   }
+
+  Future<void> _fleetWrite = Future.value();
+
+  /// Serialize history writes: a job and its first ACK can arrive together and
+  /// two overlapping atomic renames would collide on the same temp file.
+  Future<void> _persistFleetHistory() {
+    final write = _fleetWrite.then((_) async {
+      await fleetStore?.saveHistory(ackCollector.export());
+    });
+    _fleetWrite = write.catchError((_) {});
+    return write;
+  }
+
+  /// Wait for queued history writes, for example before closing the app.
+  Future<void> flushFleetHistory() => _fleetWrite;
 
   // ---------------- transport ----------------
 
@@ -211,6 +231,15 @@ class AppState extends ChangeNotifier {
   final AckCollector ackCollector = AckCollector();
   FleetStore? fleetStore;
   FleetScheduler? fleetScheduler;
+
+  /// Shared foreground ownership for every long-running operation. The OTA
+  /// flow, fleet jobs, their ACK windows and WiFi uploads all acquire a reason
+  /// here, so the last one out stops the service.
+  final BackgroundOperationGuard backgroundGuard = BackgroundOperationGuard();
+
+  /// How long a sent fleet job keeps the app alive to collect late ACKs.
+  Duration ackWindow = const Duration(minutes: 2);
+  final Map<String, Future<void> Function()> _ackWindowReleasers = {};
 
   // ---------------- firmware selection ----------------
 
@@ -402,6 +431,7 @@ class AppState extends ChangeNotifier {
       }
       directory = RepeaterDirectory(Directory('${support.path}/repeaters'));
       await directory!.load();
+      await resumeIdentityMigration();
       auditStore =
           ManagementAuditStore(File('${support.path}/management_audit.json'));
       await auditStore!.load();
@@ -413,6 +443,15 @@ class AppState extends ChangeNotifier {
     final lib = await _openLibrary();
     libraryEntries = await lib.list();
     notifyListeners();
+  }
+
+  /// Finish an identity change that was interrupted after the CLI write.
+  /// Split out so it can be tested with a plain directory.
+  Future<void> resumeIdentityMigration() async {
+    final resumedKey = await directory?.resumePendingIdentity();
+    if (resumedKey != null) {
+      log_('Finished an interrupted identity change for $resumedKey.');
+    }
   }
 
   /// Secret store setup, split out so tests can inject an in-memory backend
@@ -431,12 +470,25 @@ class AppState extends ChangeNotifier {
   Future<void> initFleetServices(Directory support) async {
     fleetStore = FleetStore(File('${support.path}/fleet.json'));
     await fleetStore!.load();
+    // Loading is not a change: restore the collector quietly so startup does
+    // not rewrite the file it just read.
+    final onChange = ackCollector.onChanged;
+    ackCollector.onChanged = null;
     for (final result in fleetStore!.history) {
       ackCollector.track(result);
     }
+    ackCollector.onChanged = onChange;
     fleetScheduler = FleetScheduler(
       save: (jobs) =>
           fleetStore!.saveQueue(jobs.map((j) => j.toJson()).toList()),
+      onQueueChanged: (active) async {
+        if (active) {
+          await backgroundGuard.acquire('fleet-queue', 'Fleet job scheduled',
+              text: 'Waiting to send a scheduled fleet job');
+        } else {
+          await backgroundGuard.release('fleet-queue');
+        }
+      },
       onDue: (job) async {
         final link = connection.link;
         if (link == null) return;
@@ -445,6 +497,13 @@ class AppState extends ChangeNotifier {
           pskHex: fleetPsk,
           senderName: connection.companionName,
         ).send(job.script);
+        await trackFleetJob(FleetJobResult(
+          id: job.id,
+          script: job.script,
+          sentAt: DateTime.now(),
+          tags: job.tags,
+        ));
+        await openAckWindow(job.id);
       },
     );
     await fleetScheduler!.load(
@@ -554,6 +613,52 @@ class AppState extends ChangeNotifier {
     );
   }
 
+  /// Track a sent job with the app's collector and audit store. The scheduler
+  /// uses this; the composer tracks through its own collector seam so widget
+  /// tests can inspect it, then records the send directly.
+  Future<void> trackFleetJob(FleetJobResult job) async {
+    ackCollector.track(job);
+    await recordFleetSend(job.id, job.script);
+  }
+
+  /// Keep the app alive for a bounded window after a send so late ACKs can
+  /// arrive. Each job has its own reason; the last window closes the service.
+  Future<void> openAckWindow(String jobId) async {
+    if (_ackWindowReleasers.containsKey(jobId)) return;
+    final reason = 'ack:$jobId';
+    try {
+      await backgroundGuard.acquire(
+        reason,
+        'Collecting fleet replies',
+        text: 'Waiting for repeater replies',
+      );
+    } catch (_) {
+      // The job was already sent. Losing the background guard is not a reason
+      // to fail it; ACKs are still collected while the app is in view.
+      return;
+    }
+    // A zero duration disables the automatic close. Widget tests use it so a
+    // two-minute real timer does not outlive the fake-async test zone.
+    Timer? timer;
+    if (ackWindow > Duration.zero) {
+      timer = Timer(ackWindow, () {
+        unawaited(closeAckWindow(jobId));
+      });
+    }
+    _ackWindowReleasers[jobId] = () async {
+      timer?.cancel();
+      await backgroundGuard.release(reason);
+    };
+    notifyListeners();
+  }
+
+  Future<void> closeAckWindow(String jobId) async {
+    final release = _ackWindowReleasers.remove(jobId);
+    if (release == null) return;
+    await release();
+    notifyListeners();
+  }
+
   /// Fleet jobs are group messages, not CLI writes, but still go in the audit
   /// log. The PSK and command output are never part of the entry.
   Future<void> recordFleetSend(String id, String script) async {
@@ -576,6 +681,7 @@ class AppState extends ChangeNotifier {
       pskHex: fleetPsk,
       senderName: connection.companionName,
     ).send(job.script);
+    await openAckWindow(job.id);
   }
 
   /// Cache store for the selected repeater. Null before services are ready.

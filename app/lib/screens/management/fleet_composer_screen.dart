@@ -155,13 +155,15 @@ class _FleetComposerScreenState extends State<FleetComposerScreen> {
     try {
       await sender.send(script);
       final job = _job();
-      (widget.collector ?? app.ackCollector).track(FleetJobResult(
+      final result = FleetJobResult(
         id: job.id,
         script: script,
         sentAt: DateTime.now(),
         tags: job.tags,
-      ));
+      );
+      (widget.collector ?? app.ackCollector).track(result);
       await app.recordFleetSend(job.id, script);
+      await app.openAckWindow(job.id);
       if (mounted) Navigator.of(context).pop(true);
     } on FormatException catch (e) {
       if (mounted) setState(() => _problem = e.message);

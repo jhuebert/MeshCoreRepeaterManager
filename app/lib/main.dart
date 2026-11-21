@@ -7,10 +7,9 @@ import 'shell/app_shell.dart';
 import 'shell/routes.dart';
 import 'theme.dart';
 
-/// Entry point. The update pipeline is long-running (minutes over LoRa), so
-/// the app starts a foreground service during the transfer to survive
-/// screen-off; the stub callback below never runs (work stays in the main
-/// isolate).
+/// Entry point. Long-running work (LoRa transfers, fleet jobs, ACK windows and
+/// WiFi uploads) holds a foreground service so the app survives screen-off.
+/// The stub callback below never runs; work stays in the main isolate.
 @pragma('vm:entry-point')
 void transferServiceEntry() {}
 
@@ -19,9 +18,9 @@ void main() {
   FlutterForegroundTask.init(
     androidNotificationOptions: AndroidNotificationOptions(
       channelId: 'meshcore_repeater_manager_transfer',
-      channelName: 'OTA firmware transfer',
+      channelName: 'Background operations',
       channelDescription:
-          'Keeps the LoRa link and the firmware transfer alive while the screen is off.',
+          'Keeps firmware transfers, fleet jobs and WiFi uploads alive while the screen is off.',
       onlyAlertOnce: true,
     ),
     iosNotificationOptions: const IOSNotificationOptions(),

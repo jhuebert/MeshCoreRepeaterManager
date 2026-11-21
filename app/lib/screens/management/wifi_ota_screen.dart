@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:wifi_ota_core/wifi_ota_core.dart';
 
 import '../../app_state.dart';
+import '../../services/background_guard.dart';
 import '../../services/cli_service.dart';
 import '../../services/wifi_connector.dart';
 import '../../services/wifi_ota_service.dart';
@@ -25,6 +26,7 @@ class WifiOtaScreen extends StatefulWidget {
     this.verify,
     this.connector,
     this.reconnect,
+    this.guard,
   });
 
   final CliService? cli;
@@ -42,6 +44,9 @@ class WifiOtaScreen extends StatefulWidget {
 
   /// Reconnect the companion after a network switch. Defaults to AppState.
   final Future<void> Function()? reconnect;
+
+  /// Foreground ownership seam for tests. Defaults to AppState's guard.
+  final BackgroundOperationGuard? guard;
 
   @override
   State<WifiOtaScreen> createState() => _WifiOtaScreenState();
@@ -153,10 +158,26 @@ class _WifiOtaScreenState extends State<WifiOtaScreen> {
 
   Future<void> _upload() async {
     final app = context.read<AppState>();
+    final guard = widget.guard ?? app.backgroundGuard;
     final service = _service();
     final image = widget.image ?? app.selectedImage;
     final url = _url;
     if (service == null || image == null || url == null) return;
+    try {
+      await guard.acquire(
+        'wifi-ota',
+        'Updating over WiFi',
+        text: 'Uploading firmware over WiFi',
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _phase = _Phase.failed;
+          _problem = 'The upload could not keep running in the background: $e';
+        });
+      }
+      return;
+    }
     setState(() {
       _phase = _Phase.uploading;
       _progress = 0;
@@ -183,6 +204,8 @@ class _WifiOtaScreenState extends State<WifiOtaScreen> {
           _problem = e.friendly;
         });
       }
+    } finally {
+      await guard.release('wifi-ota');
     }
   }
 

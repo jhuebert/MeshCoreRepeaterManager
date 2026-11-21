@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../app_state.dart';
+import '../../services/ack_collector.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/management.dart';
@@ -23,7 +27,27 @@ class _FleetResultsScreenState extends State<FleetResultsScreen> {
     return ManagementScaffold(
       title: 'Job results',
       onRefresh: () async => setState(() {}),
+      footer: results.isEmpty
+          ? null
+          : OutlinedButton.icon(
+              onPressed: () => Clipboard.setData(
+                ClipboardData(
+                    text: app.fleetStore?.export() ??
+                        jsonEncode(results.map((r) => r.toJson()).toList())),
+              ),
+              icon: const Icon(Icons.copy),
+              label: const Text('Copy all results'),
+            ),
       children: [
+        if (results.length >= AckCollector.maxHistory - 10)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 6, 16, 0),
+            child: Text(
+              'Results are nearly full. Older jobs roll off after 100; copy '
+              'them now to keep them.',
+              style: TextStyle(color: OtaTheme.warn, fontSize: 12, height: 1.3),
+            ),
+          ),
         const Padding(
           padding: EdgeInsets.fromLTRB(16, 10, 16, 4),
           child: Text(

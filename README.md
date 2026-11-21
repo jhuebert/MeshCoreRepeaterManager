@@ -76,13 +76,19 @@ password, so only use it on a trusted network. If the repeater opens a
 to a short manual-join screen. On mobile, join that network in your device
 settings first.
 
+Firmware transfers, scheduled fleet jobs, the reply window after a send and
+WiFi uploads all keep the app running in the background on mobile. If the
+system refuses that, the operation does not start rather than running
+invisibly.
+
 The **route** button on the hub and on every management screen sets how
 messages reach the repeater. Zero hop, direct and explicit hop paths are
 validated and saved on the companion, so all management and the firmware
 update use one route.
 
 The history screen filters writes by time, family, outcome and repeater;
-copying the log always includes every entry.
+copying the log always includes every entry. Job results can be copied too,
+and both lists warn before old entries roll off.
 
 **Operations** holds one-shot maintenance actions, **Diagnostics** covers
 region, sensors, GPS, bridge keys and board facts, and **History** shows the

@@ -10,7 +10,8 @@ import '../../widgets/management.dart';
 
 /// Local history of management writes. Secrets were redacted at write time,
 /// so both the list and the export are safe to share. Filters narrow the view;
-/// export always includes the whole log so old entries are not lost.
+/// export always includes the whole stored log. The store keeps the newest
+/// entries only, so the screen warns before old ones roll off.
 class AuditLogScreen extends StatefulWidget {
   const AuditLogScreen({super.key});
 
@@ -76,6 +77,15 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
             style: TextStyle(color: OtaTheme.textMuted, fontSize: 12),
           ),
         ),
+        if (all.length >= ManagementAuditStore.maxEntries - 100)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Text(
+              'The history is nearly full. Older entries roll off after 1000 '
+              'writes; copy the log now to keep them.',
+              style: TextStyle(color: OtaTheme.warn, fontSize: 12, height: 1.3),
+            ),
+          ),
         const SectionHeader('Filters'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),

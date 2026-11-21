@@ -65,6 +65,10 @@ class AckCollector {
 
   static const maxHistory = 100;
 
+  /// Called whenever a job or an ACK changes the history, so the owner can
+  /// persist it. Pure-Dart tests leave this unset.
+  void Function()? onChanged;
+
   void track(FleetJobResult result) {
     pending[result.id] = result;
     history.removeWhere((r) => r.id == result.id);
@@ -72,6 +76,7 @@ class AckCollector {
     if (history.length > maxHistory) {
       history.removeRange(maxHistory, history.length);
     }
+    onChanged?.call();
   }
 
   /// Returns true when a frame was a matching ACK.
@@ -85,6 +90,7 @@ class AckCollector {
     final job = pending[ack.jobId];
     if (job == null) return false;
     job.acks[sender] = ack;
+    onChanged?.call();
     return true;
   }
 
@@ -95,10 +101,13 @@ class AckCollector {
     final job = pending[ack.jobId];
     if (job == null) return false;
     job.acks[senderName] = ack;
+    onChanged?.call();
     return true;
   }
 
-  void forget(String id) => pending.remove(id);
+  void forget(String id) {
+    if (pending.remove(id) != null) onChanged?.call();
+  }
 
   List<FleetJobResult> export() => List.unmodifiable(history);
 }

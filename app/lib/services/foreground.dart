@@ -6,10 +6,11 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import '../main.dart' show transferServiceEntry;
 
-/// Foreground service wrapper for the LoRa transfer. Keeps the process
+/// Foreground service wrapper for long-running operations. Keeps the process
 /// alive while the screen is off; the work itself runs in the main isolate.
-/// Android/iOS only — desktop runs the transfer in-process (keep the window
-/// open).
+/// Android/iOS only. Desktop runs in-process with the window open.
+/// Callers normally go through `BackgroundOperationGuard` so overlapping
+/// operations share one service instead of stopping each other.
 class TransferForegroundService {
   static const _screenChannel =
       MethodChannel('org.huebert.meshcorepeatermanager/screen');
@@ -24,7 +25,10 @@ class TransferForegroundService {
 
   static bool get _isAndroid => defaultTargetPlatform == TargetPlatform.android;
 
-  static Future<void> start(String notificationText) async {
+  static Future<void> start(
+    String notificationText, {
+    String title = 'MeshCoreRepeaterManager: background work',
+  }) async {
     if (!supported) return;
     if (_isAndroid) {
       // POST_NOTIFICATIONS is dangerous on API 33+. The plugin does not ask
@@ -37,7 +41,7 @@ class TransferForegroundService {
       // Match the manifest's declared type on Android 14+.
       serviceTypes:
           _isAndroid ? [ForegroundServiceTypes.connectedDevice] : null,
-      notificationTitle: 'MeshCoreRepeaterManager: firmware update',
+      notificationTitle: title,
       notificationText: notificationText,
       callback: transferServiceEntry,
     );

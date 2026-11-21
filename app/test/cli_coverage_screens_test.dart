@@ -115,6 +115,29 @@ void main() {
     expect(find.text('Copy all history'), findsOneWidget);
   });
 
+  testWidgets('the audit screen warns before old writes roll off',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final dir = Directory.systemTemp.createTempSync('audit_warn_test');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final app = _app();
+    app.auditStore =
+        ManagementAuditStore(File('${dir.path}/audit.json'), persist: false);
+    await app.auditStore!.load();
+    for (var i = 0; i < 905; i++) {
+      await app.auditStore!.record('set name $i',
+          repeaterKeyHex: 'aa',
+          family: 'settings',
+          replyKind: 'ok',
+          outcome: AuditOutcome.ok);
+    }
+    await _pump(tester, const AuditLogScreen(), app);
+    expect(find.textContaining('The history is nearly full'), findsOneWidget);
+    expect(find.text('Copy all history'), findsOneWidget);
+  });
+
   testWidgets('audit history filters by outcome', (tester) async {
     tester.view.physicalSize = const Size(800, 3000);
     tester.view.devicePixelRatio = 1;

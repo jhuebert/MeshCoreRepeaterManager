@@ -8,6 +8,9 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ### Added
 
+- **One background guard for every long-running operation.** Firmware transfers, apply and rollback, scheduled fleet jobs, post-send ACK windows and WiFi uploads now share a ref-counted foreground service. A refused start stops the operation before it begins, and overlapping work can no longer stop each other. A fleet job holds a two-minute reply window so late ACKs can arrive.
+- **Fleet history now survives a restart.** Sent jobs and ACKs recovered from the login drain are persisted, the store keeps the newest 100 jobs with a copy action and a rolloff warning, and the audit screen warns before old writes roll off. A write collision in the shared JSON store was fixed. An identity change interrupted by a crash is resumed on the next launch.
+
 - **Bench probes and guide screenshots for management.** The hardware harness gains read-only `filter`, `fleet` and `wifiota` scenarios, so management behaviour can be checked on a bench without changing node state. The user guide now captures settings, the filter assistant, the fleet composer, job results and the connection sheet beside the hub.
 
 - **Management is locked during an update and serial-only limits are explained.** While staging, transfer, apply or verification is active, management tiles and the route/identify controls are locked so no command can interleave with the windowed transfer. The command line now lists the operations that need physical or serial access and the remote alternative for each.

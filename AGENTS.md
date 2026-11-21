@@ -39,10 +39,13 @@ accurate.
   the connection lifecycle shared by every screen. Management activities live
   in `lib/screens/management/`; one screen per command family, all using the
   shared CLI service and last-known labels. `lib/shell/routing_sheet.dart`
-  owns the global per-repeater path override. Secrets are opt-in through
-  `services/secret_store.dart`; the admin password and WiFi password are never
-  eligible. `services/wifi_connector.dart` attempts the `MeshCore-OTA` softAP
-  join on desktop with an in-memory fake for tests.
+  owns the global per-repeater path override.
+  `services/background_guard.dart` owns the foreground service for transfers,
+  fleet jobs, ACK windows and WiFi uploads; `services/foreground.dart` is its
+  platform wrapper. Secrets are opt-in through `services/secret_store.dart`;
+  the admin password and WiFi password are never eligible.
+  `services/wifi_connector.dart` attempts the `MeshCore-OTA` softAP join on
+  desktop with an in-memory fake for tests.
 - `app/test/` — widget and pure-Dart app tests. `support.dart` has the shared
   fixtures (`FakeLibrary`, `Catalog`, `OtaStatus`/`OtaNodeInfo`, `fakeCli`); use
   it for every screen test instead of touching platform plugins. In-memory
@@ -80,8 +83,8 @@ accurate.
 Per-repeater management data lives under the application support directory:
 `repeaters/index.json` and `repeaters/<id>/{profile,cache}.json`, plus
 `management_audit.json` and `fleet.json` (job history and queue). Every store
-is schema-versioned and migrates old shapes; the cache, audit log and fleet
-store never hold secrets. `ota_settings.json` now writes `schema: 2` alongside
+is schema-versioned and migrates old shapes; writes to one file are serialized.
+The cache, audit log and fleet store never hold secrets. `ota_settings.json` now writes `schema: 2` alongside
 the existing `offline` flag. The fleet PSK is session-only for now.
 
 Keep protocol/core packages free of Flutter or platform imports. Platform code

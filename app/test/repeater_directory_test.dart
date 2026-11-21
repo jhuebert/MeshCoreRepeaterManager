@@ -73,6 +73,45 @@ void main() {
     expect(directory.pendingIdentity, isNull);
   });
 
+  test('an interrupted identity change is resumed on load', () async {
+    final old = 'aa' * 32;
+    final next = 'dd' * 32;
+    await directory.upsert(profile(old, 'Roof'));
+    // Simulate a crash after the pending record was written but before the
+    // folder and index were moved.
+    await File('${dir.path}/index.json').writeAsString(jsonEncode({
+      'schema': 1,
+      'profiles': [profile(old, 'Roof').toJson()],
+      'pendingIdentity': {
+        'old': old,
+        'new': next,
+        'at': DateTime.now().toIso8601String(),
+      },
+    }));
+    final reopened = RepeaterDirectory(dir);
+    await reopened.load();
+    expect(reopened.pendingIdentity, isNotNull);
+
+    expect(await reopened.resumePendingIdentity(), next);
+    expect(reopened.get(old), isNull);
+    expect(reopened.get(next)!.name, 'Roof');
+    expect(reopened.pendingIdentity, isNull);
+    // Replaying an already finished migration is harmless.
+    expect(await reopened.resumePendingIdentity(), isNull);
+  });
+
+  test('a malformed pending identity is discarded', () async {
+    await File('${dir.path}/index.json').writeAsString(jsonEncode({
+      'schema': 1,
+      'profiles': [],
+      'pendingIdentity': {'new': 'ee' * 32},
+    }));
+    final reopened = RepeaterDirectory(dir);
+    await reopened.load();
+    expect(await reopened.resumePendingIdentity(), isNull);
+    expect(reopened.pendingIdentity, isNull);
+  });
+
   test('an old index shape is migrated', () async {
     await File('${dir.path}/index.json').writeAsString(jsonEncode({
       'profiles': [

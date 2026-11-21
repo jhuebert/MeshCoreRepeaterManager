@@ -131,6 +131,26 @@ void main() {
     expect(find.textContaining('cannot arm'), findsWidgets);
   });
 
+  testWidgets('results can be copied and warn before old jobs roll off',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final app = _app();
+    for (var i = 0; i < AckCollector.maxHistory; i++) {
+      app.ackCollector.track(FleetJobResult(
+        id: 'job-$i',
+        script: '!id job-$i\nver',
+        sentAt: DateTime.now(),
+      ));
+    }
+    await _pump(tester, const FleetResultsScreen(), app);
+    expect(find.text('Copy all results'), findsOneWidget);
+    expect(find.textContaining('Older jobs roll off'), findsOneWidget);
+    await tester.tap(find.text('Copy all results'));
+    await tester.pump();
+  });
+
   testWidgets('composer previews the script and byte budget', (tester) async {
     tester.view.physicalSize = const Size(800, 3000);
     tester.view.devicePixelRatio = 1;

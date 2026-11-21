@@ -45,13 +45,23 @@ class VersionedJsonStore {
     return <String, dynamic>{...migrated, 'schema': schema};
   }
 
-  Future<void> write(Map<String, dynamic> data) async {
-    await file.parent.create(recursive: true);
-    final tmp = File('${file.path}.tmp');
-    await tmp.writeAsString(
-      jsonEncode(<String, dynamic>{...data, 'schema': schema}),
-      flush: true,
-    );
-    await tmp.rename(file.path);
+  /// Serialize writes to the same file. Two stores can legitimately write at once
+  /// (a fleet job and its first ACK, or a queued job firing), and both would
+  /// otherwise race on the shared `.tmp` rename.
+  static final Map<String, Future<void>> _pendingWrites = {};
+
+  Future<void> write(Map<String, dynamic> data) {
+    final previous = _pendingWrites[file.path] ?? Future.value();
+    final next = previous.then((_) async {
+      await file.parent.create(recursive: true);
+      final tmp = File('${file.path}.tmp');
+      await tmp.writeAsString(
+        jsonEncode(<String, dynamic>{...data, 'schema': schema}),
+        flush: true,
+      );
+      await tmp.rename(file.path);
+    });
+    _pendingWrites[file.path] = next.catchError((_) {});
+    return next;
   }
 }

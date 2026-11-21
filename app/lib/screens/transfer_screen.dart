@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:ota_core/ota_core.dart' show TransferProgress;
 
 import '../app_state.dart';
-import '../services/foreground.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/wizard.dart';
@@ -51,7 +50,7 @@ class _TransferScreenState extends State<TransferScreen> {
     if (ops == null || ops == _lastNotifiedOps) return;
     _lastNotifiedOps = ops;
     final total = _app.progress?.opsTotal;
-    unawaited(TransferForegroundService.update(
+    unawaited(_app.backgroundGuard.update(
       total == null ? '$ops ops applied' : '$ops of $total ops applied',
     ));
   }
@@ -69,13 +68,16 @@ class _TransferScreenState extends State<TransferScreen> {
     final app = context.read<AppState>();
     final nodeName = app.target?.name ?? 'node';
     try {
-      await TransferForegroundService.setScreenOn(true);
-      await TransferForegroundService.start('Preparing update for $nodeName');
+      await app.backgroundGuard.acquire(
+        'ota-transfer',
+        'Updating $nodeName',
+        text: 'Preparing update for $nodeName',
+        keepScreenOn: true,
+      );
     } catch (e) {
       // The foreground service is what keeps a minutes-long transfer alive
       // when the operator goes Home. Continuing without it risks a dead
       // update, so refuse to start rather than fail silently later.
-      await TransferForegroundService.setScreenOn(false);
       if (mounted) {
         setState(() =>
             _error = 'The update could not keep running in the background: $e');
@@ -97,8 +99,7 @@ class _TransferScreenState extends State<TransferScreen> {
         setState(() => _error = '$e');
       }
     } finally {
-      await TransferForegroundService.setScreenOn(false);
-      await TransferForegroundService.stop();
+      await app.backgroundGuard.release('ota-transfer');
     }
   }
 

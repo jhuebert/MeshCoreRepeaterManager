@@ -42,12 +42,17 @@ class FleetScheduler {
   FleetScheduler({
     required this.save,
     required this.onDue,
+    this.onQueueChanged,
     this.tick = const Duration(seconds: 10),
   });
 
   final Future<void> Function(List<ScheduledFleetJob>) save;
   final Future<void> Function(ScheduledFleetJob) onDue;
   final Duration tick;
+
+  /// Notified whenever the queue becomes active or empty. The app uses this
+  /// to hold a foreground service while a scheduled job is still pending.
+  final Future<void> Function(bool active)? onQueueChanged;
 
   final List<ScheduledFleetJob> _jobs = [];
   Timer? _timer;
@@ -71,9 +76,11 @@ class FleetScheduler {
     _jobs
       ..clear()
       ..addAll(jobs);
+    if (_jobs.isNotEmpty && onQueueChanged != null) await onQueueChanged!(true);
   }
 
   Future<void> schedule(ScheduledFleetJob job) async {
+    if (_jobs.isEmpty && onQueueChanged != null) await onQueueChanged!(true);
     _jobs.removeWhere((j) => j.id == job.id);
     _jobs.add(job);
     await save(_jobs);
@@ -82,11 +89,13 @@ class FleetScheduler {
   Future<void> cancel(String id) async {
     _jobs.removeWhere((j) => j.id == id);
     await save(_jobs);
+    if (_jobs.isEmpty && onQueueChanged != null) await onQueueChanged!(false);
   }
 
   Future<void> _check() async {
     if (_checks >= maxChecks) {
       stop();
+      if (_jobs.isEmpty && onQueueChanged != null) await onQueueChanged!(false);
       return;
     }
     _checks++;
@@ -97,6 +106,9 @@ class FleetScheduler {
       _jobs.removeWhere((j) => j.id == job.id);
     }
     if (due.isNotEmpty) await save(_jobs);
+    if (due.isNotEmpty && _jobs.isEmpty && onQueueChanged != null) {
+      await onQueueChanged!(false);
+    }
   }
 
   /// Visible for tests with a fake scheduler clock.

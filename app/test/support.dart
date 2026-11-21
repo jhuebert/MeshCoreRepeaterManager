@@ -127,12 +127,17 @@ Future<FirmwareLibrary> tempLibrary() async {
   return FirmwareLibrary.open(dir);
 }
 
-Widget wrap(AppState app, Widget child) =>
-    ChangeNotifierProvider<AppState>.value(
-      value: app,
-      child: MaterialApp(
-          theme: OtaTheme.dark, debugShowCheckedModeBanner: false, home: child),
-    );
+Widget wrap(AppState app, Widget child) {
+  // An ACK window is a two-minute real Timer; that would outlive the fake-async
+  // zone and fail the test. The window itself is still acquired and released,
+  // just without an automatic close.
+  app.ackWindow = Duration.zero;
+  return ChangeNotifierProvider<AppState>.value(
+    value: app,
+    child: MaterialApp(
+        theme: OtaTheme.dark, debugShowCheckedModeBanner: false, home: child),
+  );
+}
 
 /// A CLI service with canned replies, so management widget tests never touch
 /// a companion, a platform plugin or a real binary request.

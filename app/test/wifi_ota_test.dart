@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:meshcore_repeater_manager/app_state.dart';
 import 'package:meshcore_repeater_manager/screens/management/wifi_ota_screen.dart';
 
+import 'package:meshcore_repeater_manager/services/background_guard.dart';
 import 'package:meshcore_repeater_manager/services/cli_service.dart';
 import 'package:meshcore_repeater_manager/services/wifi_connector.dart';
 import 'package:meshcore_repeater_manager/services/wifi_ota_service.dart';
@@ -228,6 +229,36 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('Upload'), findsOneWidget);
+  });
+
+  testWidgets('a refused foreground service stops the upload before it sends',
+      (tester) async {
+    final httpClient = _FakeHttp('{"id":"Roof","hardware":"ESP32"}');
+    final guard = BackgroundOperationGuard(
+      start: (_, __) async => throw StateError('denied'),
+    );
+    await tester.pumpWidget(wrap(
+      _app(),
+      WifiOtaScreen(
+        cli: _cli(<String>[]),
+        client: WifiOtaClient(client: httpClient),
+        image: Uint8List.fromList('firmware'.codeUnits),
+        version: 'v1.18.0',
+        guard: guard,
+      ),
+    ));
+    await tester.pump();
+    await tester.tap(find.text('Start'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.text('Upload'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.textContaining('could not keep running in the background'),
+        findsOneWidget);
+    expect(httpClient.lastBody, isNull);
+    expect(guard.active, isFalse);
   });
 
   testWidgets('screen preflights before offering an upload', (tester) async {
