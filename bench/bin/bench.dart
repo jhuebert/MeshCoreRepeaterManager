@@ -21,6 +21,9 @@
 //   delta     same, but base-matched (OP_COPY reuse) against --base
 //   reject    arm/transfer failure modes (bad token, SHA mismatch, gap, abort)
 //   rollback  `ota rollback` after a successful apply
+//   filter    read-only filter status, first rule page and counters
+//   fleet     read-only fleet status and tags, plus a dry-run script preview
+//   wifiota   read-only board check for the stock HTTP update page
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
@@ -30,6 +33,7 @@ import 'package:crypto/crypto.dart';
 import 'package:device_link/device_link.dart';
 import 'package:mesh_protocol/mesh_protocol.dart';
 import 'package:ota_core/ota_core.dart';
+import 'package:repeater_core/repeater_core.dart';
 
 // --- result bookkeeping -----------------------------------------------------
 
@@ -373,6 +377,51 @@ class Bench {
 }
 
 // --- scenarios --------------------------------------------------------------
+
+/// Read-only filter probe. No rule is added, removed or reordered.
+Future<void> scenarioFilter(Bench b) async {
+  info('\n== filter (read only) ==');
+  final status = await b.cli('filter');
+  final rules = await b.cli('filter list 0');
+  final stats = await b.cli('filter stats');
+  info('  status: ${status.replaceAll('\n', ' | ')}');
+  info('  rules:  ${rules.replaceAll('\n', ' | ')}');
+  info('  stats:  ${stats.replaceAll('\n', ' | ')}');
+  check('filter probe made no changes', status.isNotEmpty || rules.isNotEmpty);
+}
+
+/// Read-only fleet probe. The example script is composed locally and printed;
+/// it is never sent, so no job can run on the bench node.
+Future<void> scenarioFleet(Bench b) async {
+  info('\n== fleet (read only) ==');
+  final status = await b.cli('fleet');
+  final tags = await b.cli('fleet tag list');
+  info('  status: ${status.replaceAll('\n', ' | ')}');
+  info('  tags:   ${tags.replaceAll('\n', ' | ')}');
+  final example = composeJob(const FleetJob(
+    id: 'bench-dry-run',
+    ack: true,
+    commands: ['ver'],
+  ));
+  info('  example script (not sent): ${example.replaceAll('\n', ' | ')}');
+  check('fleet probe made no changes', status.isNotEmpty);
+}
+
+/// WiFi update is deliberately not armed here: `start ota` opens an HTTP
+/// server on the repeater and there is no remote CLI to close it. This only
+/// reports whether the board is expected to support the stock page.
+Future<void> scenarioWifiOta(Bench b) async {
+  info('\n== wifi ota (read only) ==');
+  final board = await b.cli('board');
+  final version = await b.cli('version');
+  final looksEsp32 = board.toLowerCase().contains('esp') ||
+      version.toLowerCase().contains('esp32');
+  info('  board:   $board');
+  info('  version: $version');
+  info('  start ota is not run: it opens an HTTP server on the node.');
+  check('board is an ESP32 candidate for WiFi update', looksEsp32,
+      '$board / $version');
+}
 
 Future<void> scenarioProbe(Bench b) async {
   info('\n== probe ==');
@@ -900,6 +949,12 @@ Future<void> main(List<String> argv) async {
             await scenarioResumeFull(b, image);
           case 'rollback':
             await scenarioRollback(b);
+          case 'filter':
+            await scenarioFilter(b);
+          case 'fleet':
+            await scenarioFleet(b);
+          case 'wifiota':
+            await scenarioWifiOta(b);
           case '':
             break;
           default:

@@ -41,7 +41,8 @@ accurate.
   shared CLI service and last-known labels. `lib/shell/routing_sheet.dart`
   owns the global per-repeater path override. Secrets are opt-in through
   `services/secret_store.dart`; the admin password and WiFi password are never
-  eligible.
+  eligible. `services/wifi_connector.dart` attempts the `MeshCore-OTA` softAP
+  join on desktop with an in-memory fake for tests.
 - `app/test/` — widget and pure-Dart app tests. `support.dart` has the shared
   fixtures (`FakeLibrary`, `Catalog`, `OtaStatus`/`OtaNodeInfo`, `fakeCli`); use
   it for every screen test instead of touching platform plugins. In-memory
@@ -58,17 +59,15 @@ accurate.
 - `packages/companion_client/` — contacts, login, `remoteCli`, message pump.
 - `packages/wifi_ota_core/` — pure-Dart AsyncElegantOTA client with an
   injectable HTTP client, MD5 helper and Multipart upload. Original work, MIT.
-- `app/lib/services/wifi_connector.dart` attempts the `MeshCore-OTA` softAP
-  join on desktop via a narrow OS command, with an in-memory fake for tests.
 - `packages/repeater_core/` — pure-Dart management domain: CLI reply taxonomy,
   read-only capability detection, binary report codecs (status, ACL,
   neighbours, owner info), the settings registry, chart sample metrics, the
   filter dialect/translator/rule codecs with rule-set export/import, the fleet
-  script/ACK codecs, the MQTT
-  key registry/status parsers, the fork-extras codecs, the bulk-settings
-  registry and the tagged binary REQ client. Original work, MIT. The filter dialect mirrors the
-  fork's `PatternMatch` and `TinyRegex`; keep it table-driven and re-check the
-  native filter suite when it changes.
+  script/ACK codecs, the MQTT key registry/status parsers, the fork-extras
+  codecs, the bulk-settings registry and the tagged binary REQ client. Original
+  work, MIT. The filter dialect mirrors the fork's `PatternMatch` and
+  `TinyRegex`; keep it table-driven and re-check the native filter suite when
+  it changes.
 - `packages/test_support/` — dev-only framed TCP client and test plumbing
   (MeshChameleon subtree).
 - `bench/` — hardware harness (never run in CI):

@@ -8,6 +8,8 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ### Added
 
+- **Bench probes and guide screenshots for management.** The hardware harness gains read-only `filter`, `fleet` and `wifiota` scenarios, so management behaviour can be checked on a bench without changing node state. The user guide now captures settings, the filter assistant, the fleet composer, job results and the connection sheet beside the hub.
+
 - **Management is locked during an update and serial-only limits are explained.** While staging, transfer, apply or verification is active, management tiles and the route/identify controls are locked so no command can interleave with the windowed transfer. The command line now lists the operations that need physical or serial access and the remote alternative for each.
 
 - **Filter rule backup and restore.** The filter screen exports the current rules as schema-versioned JSON or as ready to paste `filter add` commands. Import validates the whole set before anything is sent, reports the reason for a bad rule, and sends the exact commands after validation. The audit log can now be filtered by time range, family, outcome and repeater, and its export always covers the whole log.

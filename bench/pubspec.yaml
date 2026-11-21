@@ -19,6 +19,8 @@ dependencies:
     path: ../packages/mesh_protocol
   ota_core:
     path: ../packages/ota_core
+  repeater_core:
+    path: ../packages/repeater_core
 
 dev_dependencies:
   lints: ^6.0.0

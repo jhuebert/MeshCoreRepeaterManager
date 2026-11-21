@@ -337,6 +337,12 @@ The app compares the file with the repeater's running firmware on the transfer
 screen and sends only the parts that differ. If the repeater cannot hash its image, it
 sends the whole file.
 
+Management features are discovered by read-only probes, never assumed from a
+version string. The fork features in this guide were exercised against a
+repeater reporting `v1.18.0-ota2` from the `repeater-filter` branch; that build
+is recorded here as the tested reference, not as a minimum version. A node that
+answers differently simply keeps the matching tiles locked.
+
 A custom file has no board name, so the app uses the board the repeater
 reports. If the repeater did not answer that check, the app retries the handshake
 with a longer timeout; if that fails too, it asks you to pick a board before
@@ -389,6 +395,18 @@ a wrong file cannot be installed by mistake.
 | Repeater list | Firmware library |
 |---|---|
 | ![Repeaters](docs/images/02-repeater.png) | ![Library](docs/images/09-library.png) |
+
+| Settings | Filter assistant |
+|---|---|
+| ![Settings](docs/images/10-settings.png) | ![Filter assistant](docs/images/11-filter-assistant.png) |
+
+| Fleet composer | Job results |
+|---|---|
+| ![Fleet composer](docs/images/12-fleet-composer.png) | ![Job results](docs/images/13-fleet-results.png) |
+
+| Connection sheet | Repeater hub |
+|---|---|
+| ![Connection](docs/images/14-connection.png) | ![Hub](docs/images/00-hub.png) |
 
 ## How it works (short version)
 

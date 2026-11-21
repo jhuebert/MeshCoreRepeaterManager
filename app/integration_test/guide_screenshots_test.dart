@@ -23,8 +23,14 @@ import 'package:repeater_core/repeater_core.dart';
 
 import 'package:meshcore_repeater_manager/app_state.dart';
 import 'package:meshcore_repeater_manager/screens/connect_screen.dart';
+import 'package:meshcore_repeater_manager/screens/management/filter_rule_editor_screen.dart';
+import 'package:meshcore_repeater_manager/screens/management/fleet_composer_screen.dart';
+import 'package:meshcore_repeater_manager/screens/management/fleet_results_screen.dart';
+import 'package:meshcore_repeater_manager/screens/management/settings_screen.dart';
+import 'package:meshcore_repeater_manager/shell/connection_sheet.dart';
 import 'package:meshcore_repeater_manager/shell/repeater_hub_screen.dart';
 import 'package:meshcore_repeater_manager/screens/firmware_screen.dart';
+import 'package:meshcore_repeater_manager/services/ack_collector.dart';
 import 'package:meshcore_repeater_manager/screens/login_screen.dart';
 import 'package:meshcore_repeater_manager/screens/radio_settings_screen.dart';
 import 'package:meshcore_repeater_manager/screens/review_screen.dart';
@@ -250,6 +256,68 @@ List<_Shot> _shots() {
       state: _signedInApp,
       prepare: seedLibrary,
       screen: (_) => const FirmwareScreen(updateMode: false),
+    ),
+    _Shot(
+      file: '10-settings.png',
+      state: () {
+        final app = _signedInApp();
+        app.loginPermission = 3;
+        return app;
+      },
+      screen: (app) => RepeaterSettingsScreen(
+          cli: fix.fakeCli(replies: {
+        'get repeat': '> on',
+        'get name': '> Riley Ridge',
+        'get advert.interval': '> 600',
+      })),
+    ),
+    _Shot(
+      file: '11-filter-assistant.png',
+      state: () {
+        final app = _signedInApp();
+        app.loginPermission = 3;
+        return app;
+      },
+      screen: (app) => const FilterRuleEditorScreen(),
+    ),
+    _Shot(
+      file: '12-fleet-composer.png',
+      state: () {
+        final app = _signedInApp();
+        app.loginPermission = 3;
+        app.fleetPsk = '11' * 16;
+        return app;
+      },
+      screen: (app) => FleetComposerScreen(
+        availableTags: const ['north', 'roof'],
+        psk: app.fleetPsk,
+      ),
+    ),
+    _Shot(
+      file: '13-fleet-results.png',
+      state: () {
+        final app = _signedInApp();
+        app.loginPermission = 3;
+        app.ackCollector.track(FleetJobResult(
+          id: 'job-2026-11-21',
+          script: '!id job-2026-11-21\n!ack\nver',
+          sentAt: DateTime.utc(2026, 11, 21, 10, 30),
+          tags: const ['north'],
+        ));
+        app.ackCollector.handleText('Riley Ridge', 'job-2026-11-21 OK');
+        return app;
+      },
+      screen: (_) => const FleetResultsScreen(),
+    ),
+    _Shot(
+      file: '14-connection.png',
+      state: () {
+        final app = _signedInApp();
+        app.connectionPhase = ConnectionPhase.connected;
+        app.companionName = 'MeshCore-nc3';
+        return app;
+      },
+      screen: (_) => const Scaffold(body: ConnectionSheet()),
     ),
   ];
 }
