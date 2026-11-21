@@ -9,6 +9,7 @@ import '../screens/management/cli_screen.dart';
 import '../screens/management/filter_rule_editor_screen.dart';
 import '../screens/management/filter_screen.dart';
 import '../screens/management/fleet_screen.dart';
+import '../screens/management/fork_extras_screen.dart';
 import '../screens/management/mqtt_screen.dart';
 import '../screens/management/wifi_ota_screen.dart';
 import '../screens/management/neighbors_screen.dart';
@@ -32,6 +33,7 @@ class AppRoutes {
   static const fleet = '/fleet';
   static const mqtt = '/mqtt';
   static const wifiOta = '/wifi-ota';
+  static const extras = '/extras';
 }
 
 Route<dynamic>? generateRoute(RouteSettings settings) =>
@@ -65,5 +67,7 @@ Route<dynamic>? generateRoute(RouteSettings settings) =>
           builder: (_) => const MqttScreen(), settings: settings),
       AppRoutes.wifiOta => MaterialPageRoute(
           builder: (_) => const WifiOtaScreen(), settings: settings),
+      AppRoutes.extras => MaterialPageRoute(
+          builder: (_) => const ForkExtrasScreen(), settings: settings),
       _ => null,
     };

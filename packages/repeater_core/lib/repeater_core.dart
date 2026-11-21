@@ -11,6 +11,7 @@ export 'src/filter/dialect.dart';
 export 'src/filter/filter_rule.dart';
 export 'src/filter/translator.dart';
 export 'src/fleet/envelope.dart';
+export 'src/fork_extras.dart';
 export 'src/mqtt.dart';
 export 'src/cli_reply.dart';
 export 'src/reports.dart';

@@ -227,6 +227,14 @@ class RepeaterHubScreen extends StatelessWidget {
         true,
         ''
       ),
+      (
+        Icons.tune,
+        'Fork features',
+        'Radio2, battery gate, mesh clock, bot and power profile.',
+        AppRoutes.extras,
+        fork && confirmed,
+        'Update-enabled fork'
+      ),
     ];
     return [
       Padding(
