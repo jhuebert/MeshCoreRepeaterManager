@@ -14,6 +14,12 @@ class WifiOtaException implements Exception {
   String toString() => 'WifiOtaException: $friendly';
 }
 
+/// The update page did not answer. On a fresh `start ota` this usually means
+/// the repeater opened its softAP and the app is not on that network yet.
+class WifiIdentityUnreachable extends WifiOtaException {
+  const WifiIdentityUnreachable(super.friendly);
+}
+
 class WifiIdentity {
   const WifiIdentity(this.id, this.hardware);
 
@@ -63,17 +69,19 @@ class WifiOtaClient {
     try {
       response = await _client.get(uri).timeout(timeout);
     } on http.ClientException catch (e) {
-      throw WifiOtaException('Could not reach the update page: ${e.message}');
+      throw WifiIdentityUnreachable(
+          'Could not reach the update page: ${e.message}');
     }
     if (response.statusCode != 200) {
-      throw WifiOtaException(
+      throw WifiIdentityUnreachable(
           'The update page answered ${response.statusCode}.');
     }
     try {
       final decoded = jsonDecode(response.body) as Map<String, dynamic>;
       return WifiIdentity.fromJson(decoded);
     } on FormatException {
-      throw const WifiOtaException('The update identity was not valid JSON.');
+      throw const WifiIdentityUnreachable(
+          'The update identity was not valid JSON.');
     }
   }
 

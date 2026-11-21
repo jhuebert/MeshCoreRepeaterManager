@@ -72,7 +72,9 @@ off by default and stops after a bounded number of attempts.
 The **WiFi update** screen can move a stock ESP32 repeater to the fork without
 LoRa airtime, using its built-in update page over your LAN. The page has no
 password, so only use it on a trusted network. If the repeater opens a
-`MeshCore-OTA` hotspot, join that network in your device settings first.
+`MeshCore-OTA` hotspot, the app tries to join it on desktop and falls back
+to a short manual-join screen. On mobile, join that network in your device
+settings first.
 
 **Operations** holds one-shot maintenance actions, **Diagnostics** covers
 region, sensors, GPS, bridge keys and board facts, and **History** shows the

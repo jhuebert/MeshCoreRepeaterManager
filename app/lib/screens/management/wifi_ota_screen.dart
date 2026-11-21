@@ -6,6 +6,7 @@ import 'package:wifi_ota_core/wifi_ota_core.dart';
 
 import '../../app_state.dart';
 import '../../services/cli_service.dart';
+import '../../services/wifi_connector.dart';
 import '../../services/wifi_ota_service.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
@@ -22,6 +23,8 @@ class WifiOtaScreen extends StatefulWidget {
     this.image,
     this.version,
     this.verify,
+    this.connector,
+    this.reconnect,
   });
 
   final CliService? cli;
@@ -32,6 +35,13 @@ class WifiOtaScreen extends StatefulWidget {
   /// Test seam for the post-upload verification. In production this re-logs
   /// in over the companion and reads `ver`.
   final Future<String?> Function()? verify;
+
+  /// How the app tries to join the repeater's softAP before the HTTP upload.
+  /// Injected so widget tests never touch OS network tooling.
+  final WifiConnector? connector;
+
+  /// Reconnect the companion after a network switch. Defaults to AppState.
+  final Future<void> Function()? reconnect;
 
   @override
   State<WifiOtaScreen> createState() => _WifiOtaScreenState();
@@ -46,6 +56,9 @@ class _WifiOtaScreenState extends State<WifiOtaScreen> {
   double _progress = 0;
   String? _problem;
   String? _verifiedVersion;
+  bool _needJoin = false;
+  bool _joinAttempted = false;
+  String? _joinMessage;
 
   WifiOtaService? _service() {
     final app = context.read<AppState>();
@@ -61,20 +74,15 @@ class _WifiOtaScreenState extends State<WifiOtaScreen> {
     setState(() {
       _phase = _Phase.preflight;
       _problem = null;
+      _joinAttempted = false;
+      _needJoin = false;
+      _joinMessage = null;
     });
     try {
       final url = await service.startOta();
-      final identity = await service.identity(url);
-      if (!identity.isEsp32) {
-        throw const WifiOtaException(
-            'This board does not report ESP32. WiFi update is for ESP32 only.');
-      }
       if (!mounted) return;
-      setState(() {
-        _url = url;
-        _identity = identity;
-        _phase = _Phase.ready;
-      });
+      setState(() => _url = url);
+      await _loadIdentity(service, url);
     } on WifiOtaException catch (e) {
       if (mounted) {
         setState(() {
@@ -83,6 +91,64 @@ class _WifiOtaScreenState extends State<WifiOtaScreen> {
         });
       }
     }
+  }
+
+  /// Read the update page identity. If it is unreachable, the node has opened
+  /// its softAP and the operator must be connected to it first.
+  Future<void> _loadIdentity(WifiOtaService service, Uri url) async {
+    try {
+      final identity = await service.identity(url);
+      if (!identity.isEsp32) {
+        throw const WifiOtaException(
+            'This board does not report ESP32. WiFi update is for ESP32 only.');
+      }
+      if (!mounted) return;
+      setState(() {
+        _identity = identity;
+        _needJoin = false;
+        _phase = _Phase.ready;
+      });
+    } on WifiIdentityUnreachable {
+      if (!mounted) return;
+      setState(() {
+        _needJoin = true;
+        _phase = _Phase.preflight;
+      });
+      if (!_joinAttempted) {
+        _joinAttempted = true;
+        await _attemptJoin();
+      }
+    }
+  }
+
+  Future<void> _attemptJoin() async {
+    final app = context.read<AppState>();
+    final reconnect = widget.reconnect ?? app.reconnect;
+    final connector = widget.connector ?? const ManualWifiConnector();
+    final result = await connector.join('MeshCore-OTA');
+    if (!mounted) return;
+    if (result == WifiJoinResult.joined) {
+      setState(() =>
+          _joinMessage = 'Joined MeshCore-OTA. Reconnecting the companion.');
+      await reconnect();
+      final service = _service();
+      final url = _url;
+      if (service != null && url != null) await _loadIdentity(service, url);
+      return;
+    }
+    setState(() => _joinMessage = result == WifiJoinResult.denied
+        ? 'The system refused the join. Join MeshCore-OTA in your device '
+            'settings, then tap Continue.'
+        : 'This device cannot join a network for you. Join MeshCore-OTA in '
+            'your device settings, then tap Continue.');
+  }
+
+  Future<void> _continueAfterJoin() async {
+    final service = _service();
+    final url = _url;
+    if (service == null || url == null) return;
+    setState(() => _phase = _Phase.preflight);
+    await _loadIdentity(service, url);
   }
 
   Future<void> _upload() async {
@@ -175,6 +241,10 @@ class _WifiOtaScreenState extends State<WifiOtaScreen> {
             onPressed: image == null ? null : _start,
             icon: const Icon(Icons.wifi),
             label: const Text('Start')),
+        _Phase.preflight when _needJoin => FilledButton.icon(
+            onPressed: _continueAfterJoin,
+            icon: const Icon(Icons.wifi_find),
+            label: const Text('Continue')),
         _Phase.ready => FilledButton.icon(
             onPressed: _upload,
             icon: const Icon(Icons.upload_file),
@@ -191,6 +261,25 @@ class _WifiOtaScreenState extends State<WifiOtaScreen> {
       },
       children: [
         if (_problem != null) ErrorBanner(_problem!),
+        if (_needJoin) ...[
+          const SectionHeader('Connect to the update network'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+                _joinMessage ??
+                    'The update page was not reachable. Join MeshCore-OTA and '
+                        'tap Continue.',
+                style: const TextStyle(color: OtaTheme.warn, fontSize: 12)),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Text(
+              'This network has no password. Joining it can drop the '
+              'companion link; the app reconnects automatically when it can.',
+              style: TextStyle(color: OtaTheme.textMuted, fontSize: 11),
+            ),
+          ),
+        ],
         const Padding(
           padding: EdgeInsets.fromLTRB(16, 10, 16, 4),
           child: Text(

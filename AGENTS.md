@@ -57,6 +57,8 @@ accurate.
 - `packages/companion_client/` — contacts, login, `remoteCli`, message pump.
 - `packages/wifi_ota_core/` — pure-Dart AsyncElegantOTA client with an
   injectable HTTP client, MD5 helper and Multipart upload. Original work, MIT.
+- `app/lib/services/wifi_connector.dart` attempts the `MeshCore-OTA` softAP
+  join on desktop via a narrow OS command, with an in-memory fake for tests.
 - `packages/repeater_core/` — pure-Dart management domain: CLI reply taxonomy,
   read-only capability detection, binary report codecs (status, ACL,
   neighbours, owner info), the settings registry, chart sample metrics, the

@@ -99,6 +99,7 @@ Repeater management adds three kinds of local data, all on the device only:
   raw command line refuses serial-only or destructive commands such as
   `get prv.key` and `erase` outright. Filter rule deletion asks first, and the
   editor's dry run is advisory: the repeater decides every packet.
+- **Joining the update hotspot is narrow and reversible by hand.** The app attempts a single network connect through the desktop OS tooling only, never edits saved network configuration, and falls back to an explicit manual-join screen if the OS refuses. Mobile platforms always use the manual path.
 - **WiFi update uses plain HTTP on a trusted LAN or an open hotspot.** The app
   warns before arming the page, never sends the admin password over HTTP, and
   treats a lost upload reply as unknown until a re-login and version read

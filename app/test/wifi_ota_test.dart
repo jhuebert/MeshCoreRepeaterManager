@@ -7,6 +7,7 @@ import 'package:meshcore_repeater_manager/app_state.dart';
 import 'package:meshcore_repeater_manager/screens/management/wifi_ota_screen.dart';
 
 import 'package:meshcore_repeater_manager/services/cli_service.dart';
+import 'package:meshcore_repeater_manager/services/wifi_connector.dart';
 import 'package:meshcore_repeater_manager/services/wifi_ota_service.dart';
 import 'package:repeater_core/repeater_core.dart';
 import 'package:wifi_ota_core/wifi_ota_core.dart';
@@ -14,10 +15,11 @@ import 'package:wifi_ota_core/wifi_ota_core.dart';
 import 'support.dart';
 
 class _FakeHttp extends http.BaseClient {
-  _FakeHttp(this.body, {this.postBody = 'OK'});
+  _FakeHttp(this.body, {this.postBody = 'OK', this.identityFailures = 0});
 
   String body;
   String postBody;
+  int identityFailures;
   String? lastPath;
   String? lastBody;
 
@@ -31,9 +33,21 @@ class _FakeHttp extends http.BaseClient {
       }
       lastBody = utf8.decode(chunks);
     }
+    if (request.method == 'GET' && identityFailures > 0) {
+      identityFailures--;
+      return http.StreamedResponse(Stream.value(utf8.encode('offline')), 500);
+    }
     final reply = request.method == 'POST' ? postBody : body;
     return http.StreamedResponse(Stream.value(utf8.encode(reply)), 200);
   }
+}
+
+AppState _app() {
+  final app = AppState();
+  app.connectionPhase = ConnectionPhase.connected;
+  app.target = contact('Roof');
+  app.loginPermission = 3;
+  return app;
 }
 
 CliService _cli(List<String> commands,
@@ -157,6 +171,63 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
     expect(find.textContaining('v1.18.0-new'), findsWidgets);
     expect(find.text('Done'), findsOneWidget);
+  });
+
+  testWidgets('a softAP join reconnects and retries the identity read',
+      (tester) async {
+    final app = _app();
+    final connector = FakeWifiConnector();
+    var reconnects = 0;
+    final httpClient =
+        _FakeHttp('{"id":"Roof","hardware":"ESP32"}', identityFailures: 1);
+    await tester.pumpWidget(wrap(
+      app,
+      WifiOtaScreen(
+        cli: _cli(<String>[]),
+        client: WifiOtaClient(client: httpClient),
+        image: Uint8List.fromList('firmware'.codeUnits),
+        connector: connector,
+        reconnect: () async => reconnects++,
+      ),
+    ));
+    await tester.pump();
+    await tester.tap(find.text('Start'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(connector.joined, ['MeshCore-OTA']);
+    expect(reconnects, 1);
+    expect(find.text('Upload'), findsOneWidget);
+  });
+
+  testWidgets('an unsupported join shows a manual fallback and Continue',
+      (tester) async {
+    final app = _app();
+    final connector = FakeWifiConnector(result: WifiJoinResult.unavailable);
+    final httpClient =
+        _FakeHttp('{"id":"Roof","hardware":"ESP32"}', identityFailures: 1);
+    await tester.pumpWidget(wrap(
+      app,
+      WifiOtaScreen(
+        cli: _cli(<String>[]),
+        client: WifiOtaClient(client: httpClient),
+        image: Uint8List.fromList('firmware'.codeUnits),
+        connector: connector,
+      ),
+    ));
+    await tester.pump();
+    await tester.tap(find.text('Start'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.textContaining('cannot join a network for you'), findsWidgets);
+    expect(find.text('Continue'), findsOneWidget);
+    // The manual path is a single attempt; Continue re-reads the identity.
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Upload'), findsOneWidget);
   });
 
   testWidgets('screen preflights before offering an upload', (tester) async {
