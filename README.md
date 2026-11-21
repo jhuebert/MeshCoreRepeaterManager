@@ -69,6 +69,12 @@ turns into battery, traffic and uptime trends. Charts are drawn from those
 saved readings, so opening the screen costs no airtime. Automatic refresh is
 off by default and stops after a bounded number of attempts.
 
+On a repeater with the filter feature, the **Filter** screen reads every rule
+page, controls the master switch and rate limit, and asks before deleting
+anything. Its rule editor checks patterns against the firmware's smaller regex
+dialect, can translate a common regex with a warning for every change, and
+dry-runs sample packets before showing the exact command.
+
 Management writes are recorded locally with secrets removed. Firmware updates
 invalidate that repeater's cached facts. The access list screen asks for extra
 confirmation before lowering the companion's own access, so you cannot lock

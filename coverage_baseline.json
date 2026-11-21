@@ -45,6 +45,18 @@
       "covered": 77,
       "total": 95
     },
+    "app/lib/screens/management/filter_rule_editor_screen.dart": {
+      "covered": 108,
+      "total": 125
+    },
+    "app/lib/screens/management/filter_screen.dart": {
+      "covered": 127,
+      "total": 148
+    },
+    "app/lib/screens/management/filter_stats_screen.dart": {
+      "covered": 33,
+      "total": 40
+    },
     "app/lib/screens/management/neighbors_screen.dart": {
       "covered": 72,
       "total": 88
@@ -92,6 +104,10 @@
     "app/lib/services/cli_service.dart": {
       "covered": 49,
       "total": 51
+    },
+    "app/lib/services/filter_service.dart": {
+      "covered": 20,
+      "total": 20
     },
     "app/lib/services/firmware_library.dart": {
       "covered": 74,
@@ -178,8 +194,8 @@
       "total": 40
     },
     "app/lib/shell/routes.dart": {
-      "covered": 20,
-      "total": 20
+      "covered": 24,
+      "total": 24
     },
     "app/lib/theme.dart": {
       "covered": 6,
@@ -194,8 +210,8 @@
       "total": 67
     },
     "app/lib/widgets/management.dart": {
-      "covered": 55,
-      "total": 64
+      "covered": 57,
+      "total": 66
     },
     "app/lib/widgets/wizard.dart": {
       "covered": 43,
@@ -348,6 +364,18 @@
     "packages/repeater_core/lib/src/cli_reply.dart": {
       "covered": 13,
       "total": 13
+    },
+    "packages/repeater_core/lib/src/filter/dialect.dart": {
+      "covered": 93,
+      "total": 102
+    },
+    "packages/repeater_core/lib/src/filter/filter_rule.dart": {
+      "covered": 199,
+      "total": 207
+    },
+    "packages/repeater_core/lib/src/filter/translator.dart": {
+      "covered": 43,
+      "total": 48
     },
     "packages/repeater_core/lib/src/reports.dart": {
       "covered": 57,

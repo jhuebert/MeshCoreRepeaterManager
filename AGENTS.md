@@ -53,8 +53,11 @@ accurate.
 - `packages/companion_client/` — contacts, login, `remoteCli`, message pump.
 - `packages/repeater_core/` — pure-Dart management domain: CLI reply taxonomy,
   read-only capability detection, binary report codecs (status, ACL,
-  neighbours, owner info), the settings registry, chart sample metrics and the
-  tagged binary REQ client. Original work, MIT.
+  neighbours, owner info), the settings registry, chart sample metrics, the
+  filter dialect/translator/rule codecs and the tagged binary REQ client.
+  Original work, MIT. The filter dialect mirrors the fork's `PatternMatch` and
+  `TinyRegex`; keep it table-driven and re-check the native filter suite when
+  it changes.
 - `packages/test_support/` — dev-only framed TCP client and test plumbing
   (MeshChameleon subtree).
 - `bench/` — hardware harness (never run in CI):

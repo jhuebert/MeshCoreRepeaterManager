@@ -8,6 +8,7 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ### Added
 
+- **Filter management with an assistant.** Rules can be read in order, enabled, disabled, moved, deleted and cleared; channels and the advert rate limit have their own controls. The rule editor validates patterns as you type, translates common regex into the repeater's smaller dialect with a warning for every lossy change, offers fixes, dry-runs sample packets and shows the exact command before sending.
 - **Statistics from saved readings.** Status and neighbour refreshes now record battery, signal, traffic, airtime, uptime, errors and neighbour counts as timestamped samples. A Statistics screen draws trends with a metric picker, time range and sample table; status cards show small sparklines. Opening a chart sends no mesh traffic, and automatic refresh is off by default and stops after a dozen attempts.
 - **Stock repeaters can now be inspected and configured from the hub.** Status comes from one binary status request; settings use curated sections with per-section refresh, draft tracking and batch save. A generic browser and a raw command line cover everything else, with confirmations for state-changing commands and a clear "unknown" when a reply is lost.
 - **Access list and neighbours have their own screens.** The ACL is read with a binary request, shows the companion's own entry and asks again before lowering it. Neighbours are paged with an explicit next action and a sort choice, with no silent truncation.

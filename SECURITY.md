@@ -97,7 +97,8 @@ Repeater management adds three kinds of local data, all on the device only:
   are re-read before the app claims they landed. The access-list screen asks a
   second time before lowering or removing the companion's own entry, and the
   raw command line refuses serial-only or destructive commands such as
-  `get prv.key` and `erase` outright.
+  `get prv.key` and `erase` outright. Filter rule deletion asks first, and the
+  editor's dry run is advisory: the repeater decides every packet.
 
 The settings file, audit log and repeater index are schema-versioned. A file
 from a newer schema is reported, not overwritten, and migrations keep the
