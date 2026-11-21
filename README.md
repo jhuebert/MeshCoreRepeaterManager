@@ -69,6 +69,11 @@ turns into battery, traffic and uptime trends. Charts are drawn from those
 saved readings, so opening the screen costs no airtime. Automatic refresh is
 off by default and stops after a bounded number of attempts.
 
+The **WiFi update** screen can move a stock ESP32 repeater to the fork without
+LoRa airtime, using its built-in update page over your LAN. The page has no
+password, so only use it on a trusted network. If the repeater opens a
+`MeshCore-OTA` hotspot, join that network in your device settings first.
+
 The **MQTT** screen configures the observer's two broker slots, shared publish
 settings and Wi-Fi. Passwords and tokens are write only: the app never reads
 them back or saves them.

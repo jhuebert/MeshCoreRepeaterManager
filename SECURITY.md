@@ -99,6 +99,11 @@ Repeater management adds three kinds of local data, all on the device only:
   raw command line refuses serial-only or destructive commands such as
   `get prv.key` and `erase` outright. Filter rule deletion asks first, and the
   editor's dry run is advisory: the repeater decides every packet.
+- **WiFi update uses plain HTTP on a trusted LAN or an open hotspot.** The app
+  warns before arming the page, never sends the admin password over HTTP, and
+  treats a lost upload reply as unknown until a re-login and version read
+  confirm the reboot. Device-side HTTP authentication is out of scope, so this
+  limitation is disclosed in the UI rather than fixed in firmware.
 - **Fleet scripts execute with the repeater's own privileges.** The composer
   shows the exact text and asks before sending; received group text is never
   executed by the app, only key-prefixed ACKs are parsed. The PSK is entered

@@ -17,9 +17,9 @@ author, via `git subtree` (full history retained):
 MeshChameleon's own MIT notice and upstream attributions are retained in
 `packages/mesh_protocol/` and `packages/device_link/` via history.
 
-MeshCoreRepeaterManager's new code (the `companion_client`, `ota_core` and
-`repeater_core` packages, and the `app/` Flutter application) is original to
-this repository, MIT, same author.
+MeshCoreRepeaterManager's new code (the `companion_client`, `ota_core`,
+`repeater_core` and `wifi_ota_core` packages, and the `app/` Flutter
+application) is original to this repository, MIT, same author.
 
 MeshCore is a project of meshcore-dev (<https://github.com/meshcore-dev/MeshCore>),
 MIT-licensed; OTA firmware images consumed by this app are built by

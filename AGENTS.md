@@ -51,6 +51,8 @@ accurate.
 - `packages/device_link/` — pure-Dart `RadioLink` SPI, TCP/BLE/fake transports,
   binary requests (MeshChameleon subtree).
 - `packages/companion_client/` — contacts, login, `remoteCli`, message pump.
+- `packages/wifi_ota_core/` — pure-Dart AsyncElegantOTA client with an
+  injectable HTTP client, MD5 helper and Multipart upload. Original work, MIT.
 - `packages/repeater_core/` — pure-Dart management domain: CLI reply taxonomy,
   read-only capability detection, binary report codecs (status, ACL,
   neighbours, owner info), the settings registry, chart sample metrics, the

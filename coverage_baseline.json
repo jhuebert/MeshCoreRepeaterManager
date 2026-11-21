@@ -89,6 +89,10 @@
       "covered": 102,
       "total": 102
     },
+    "app/lib/screens/management/wifi_ota_screen.dart": {
+      "covered": 91,
+      "total": 109
+    },
     "app/lib/screens/radio_settings_screen.dart": {
       "covered": 152,
       "total": 158
@@ -209,6 +213,10 @@
       "covered": 108,
       "total": 126
     },
+    "app/lib/services/wifi_ota_service.dart": {
+      "covered": 11,
+      "total": 12
+    },
     "app/lib/shell/app_shell.dart": {
       "covered": 22,
       "total": 23
@@ -234,8 +242,8 @@
       "total": 40
     },
     "app/lib/shell/routes.dart": {
-      "covered": 28,
-      "total": 28
+      "covered": 30,
+      "total": 30
     },
     "app/lib/theme.dart": {
       "covered": 6,
@@ -444,6 +452,10 @@
     "packages/test_support/lib/framed_client.dart": {
       "covered": 40,
       "total": 41
+    },
+    "packages/wifi_ota_core/lib/src/client.dart": {
+      "covered": 41,
+      "total": 50
     }
   }
 }
