@@ -31,10 +31,15 @@ Future<void> _pump(WidgetTester tester, Widget child, AppState app) async {
 }
 
 void main() {
-  testWidgets('status screen is cache-first and refreshes on demand',
+  testWidgets('status screen is cache-first and records samples on refresh',
       (tester) async {
+    final dir = Directory.systemTemp.createTempSync('status_refresh_test');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final cache =
+        RepeaterCacheStore(File('${dir.path}/cache.json'), persist: false);
+    await cache.load();
     final cli = fakeCli();
-    await _pump(tester, RepeaterStatusScreen(cli: cli), _app());
+    await _pump(tester, RepeaterStatusScreen(cli: cli, cache: cache), _app());
     expect(
         find.text('No status has been read yet. Tap refresh.'), findsOneWidget);
 
@@ -43,6 +48,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('4100 mV'), findsOneWidget);
     expect(find.textContaining('Last known'), findsWidgets);
+    expect(cache.samples('batteryMv'), isNotEmpty);
   });
 
   testWidgets('status screen renders cached facts without a refresh',
@@ -276,19 +282,25 @@ void main() {
 
   testWidgets('neighbours screen pages and shows an explicit Next action',
       (tester) async {
+    final dir = Directory.systemTemp.createTempSync('neighbours_test');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final cache =
+        RepeaterCacheStore(File('${dir.path}/cache.json'), persist: false);
+    await cache.load();
     final commands = <String>[];
     final cli = fakeCli(
         commands: commands,
         neighbours: NeighborPage(3, [
           Neighbor(Uint8List.fromList([1, 2, 3, 4, 5, 6]), 30, 7.0),
         ]));
-    await _pump(tester, NeighborsScreen(cli: cli), _app());
+    await _pump(tester, NeighborsScreen(cli: cli, cache: cache), _app());
     await tester.tap(find.byIcon(Icons.refresh));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('3 known neighbours.'), findsOneWidget);
     expect(find.text('010203040506'), findsOneWidget);
     expect(find.text('Next'), findsOneWidget);
+    expect(cache.samples('neighbours').single.value, 3);
 
     // Sorting and discovery are explicit actions, never automatic on open.
     await tester.tap(find.byType(DropdownButton<NeighborOrder>));

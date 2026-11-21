@@ -1,6 +1,10 @@
 import 'dart:io';
 
+import 'package:repeater_core/repeater_core.dart';
+
 import 'json_store.dart';
+
+export 'package:repeater_core/repeater_core.dart' show MetricSample;
 
 /// Where a cached value came from. The UI uses this alongside its timestamp.
 class CacheSource {
@@ -37,27 +41,6 @@ class CacheEntry {
       };
 
   bool get isStale => source == CacheSource.stale;
-}
-
-class MetricSample {
-  const MetricSample(this.metric, this.value, this.at);
-
-  final String metric;
-  final double value;
-  final DateTime at;
-
-  Map<String, dynamic> toJson() => {
-        'metric': metric,
-        'value': value,
-        'at': at.toIso8601String(),
-      };
-
-  factory MetricSample.fromJson(Map<String, dynamic> json) => MetricSample(
-        json['metric'] as String,
-        (json['value'] as num).toDouble(),
-        DateTime.tryParse(json['at'] as String) ??
-            DateTime.fromMillisecondsSinceEpoch(0),
-      );
 }
 
 /// Per-repeater cache of non-secret settings, status snapshots and samples.

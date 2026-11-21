@@ -5,7 +5,9 @@ import 'package:repeater_core/repeater_core.dart';
 import '../../app_state.dart';
 import '../../services/cli_service.dart';
 import '../../services/repeater_cache_store.dart';
+import '../../services/stats_recorder.dart';
 import '../../theme.dart';
+import '../../widgets/charts/metric_chart.dart';
 import '../../widgets/common.dart';
 import '../../widgets/management.dart';
 
@@ -31,6 +33,7 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
   DateTime? _ownerAt;
   bool _busy = false;
   String? _problem;
+  Map<String, List<MetricSample>> _samples = {};
 
   @override
   void initState() {
@@ -44,6 +47,10 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
     await cache.load();
     final status = cache.read(_statusKey);
     final owner = cache.read(_ownerKey);
+    final samples = <String, List<MetricSample>>{
+      for (final spec in [...statusMetrics, neighbourCount])
+        spec.id: downsample(cache.samples(spec.id), maxPoints: 40),
+    };
     if (!mounted) return;
     setState(() {
       if (status?.value is Map) {
@@ -57,6 +64,7 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
             m['name'] as String? ?? '', m['owner'] as String? ?? '');
         _ownerAt = owner.fetchedAt;
       }
+      _samples = samples;
     });
   }
 
@@ -74,6 +82,7 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
     final owner = await cli.owner(target);
     if (status != null) {
       await cache?.write(_statusKey, status.toJson());
+      if (cache != null) await StatsRecorder(cache).recordStatus(status);
     }
     if (owner != null) {
       await cache?.write(_ownerKey, {
@@ -97,6 +106,7 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
         _problem = 'No answer from the repeater. Outcome unknown; try again.';
       }
     });
+    await _loadCache();
   }
 
   @override
@@ -120,6 +130,11 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
               label: 'Battery',
               value: '${s.batteryMilliVolts} mV',
               fetchedAt: _statusAt),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(134, 0, 16, 4),
+            child: MetricSparkline(
+                metricId: 'batteryMv', samples: _samples['batteryMv'] ?? []),
+          ),
           RefreshableValue(
               label: 'Uptime',
               value:
@@ -140,6 +155,12 @@ class _RepeaterStatusScreenState extends State<RepeaterStatusScreen> {
               fetchedAt: _statusAt),
           RefreshableValue(
               label: 'Sent', value: '${s.packetsSent}', fetchedAt: _statusAt),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(134, 0, 16, 4),
+            child: MetricSparkline(
+                metricId: 'packetsSent',
+                samples: _samples['packetsSent'] ?? []),
+          ),
           RefreshableValue(
               label: 'TX airtime',
               value: '${s.totalAirTimeSecs} s',

@@ -180,6 +180,14 @@ class RepeaterHubScreen extends StatelessWidget {
         ''
       ),
       (
+        Icons.show_chart,
+        'Statistics',
+        'Battery, traffic and uptime trends from saved readings.',
+        AppRoutes.stats,
+        true,
+        ''
+      ),
+      (
         Icons.terminal,
         'Command line',
         'Run a raw command for anything without a dedicated screen.',

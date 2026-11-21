@@ -4,6 +4,7 @@ import '../screens/connect_screen.dart';
 import '../screens/firmware_screen.dart';
 import '../screens/management/acl_screen.dart';
 import '../screens/management/browser_screen.dart';
+import '../screens/management/charts_screen.dart';
 import '../screens/management/cli_screen.dart';
 import '../screens/management/neighbors_screen.dart';
 import '../screens/management/settings_screen.dart';
@@ -20,6 +21,7 @@ class AppRoutes {
   static const cli = '/cli';
   static const acl = '/acl';
   static const neighbors = '/neighbors';
+  static const stats = '/stats';
 }
 
 Route<dynamic>? generateRoute(RouteSettings settings) =>
@@ -41,5 +43,7 @@ Route<dynamic>? generateRoute(RouteSettings settings) =>
           builder: (_) => const AdminAclScreen(), settings: settings),
       AppRoutes.neighbors => MaterialPageRoute(
           builder: (_) => const NeighborsScreen(), settings: settings),
+      AppRoutes.stats => MaterialPageRoute(
+          builder: (_) => const StatsChartsScreen(), settings: settings),
       _ => null,
     };

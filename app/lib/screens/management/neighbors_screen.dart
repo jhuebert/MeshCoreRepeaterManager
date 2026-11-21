@@ -4,6 +4,8 @@ import 'package:repeater_core/repeater_core.dart';
 
 import '../../app_state.dart';
 import '../../services/cli_service.dart';
+import '../../services/repeater_cache_store.dart';
+import '../../services/stats_recorder.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/management.dart';
@@ -11,9 +13,10 @@ import '../../widgets/management.dart';
 /// Neighbours come from one paged binary request. Long lists show an explicit
 /// next action rather than silently truncating, and sort is chosen here.
 class NeighborsScreen extends StatefulWidget {
-  const NeighborsScreen({super.key, this.cli});
+  const NeighborsScreen({super.key, this.cli, this.cache});
 
   final CliService? cli;
+  final RepeaterCacheStore? cache;
 
   @override
   State<NeighborsScreen> createState() => _NeighborsScreenState();
@@ -54,6 +57,8 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
         return;
       }
       _total = page.total;
+      final cache = widget.cache ?? context.read<AppState>().cacheForTarget();
+      if (cache != null) StatsRecorder(cache).recordNeighbourCount(page.total);
       if (reset) {
         _entries
           ..clear()
