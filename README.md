@@ -74,6 +74,10 @@ LoRa airtime, using its built-in update page over your LAN. The page has no
 password, so only use it on a trusted network. If the repeater opens a
 `MeshCore-OTA` hotspot, join that network in your device settings first.
 
+The **Fork features** screen covers radio2, the battery gate, mesh clock, bot
+and the CPU/RX power profile. Node refusals are shown as the firmware wrote
+them, and an enabled radio2 preset is read only.
+
 The **MQTT** screen configures the observer's two broker slots, shared publish
 settings and Wi-Fi. Passwords and tokens are write only: the app never reads
 them back or saves them.

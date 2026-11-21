@@ -73,6 +73,10 @@
       "covered": 79,
       "total": 88
     },
+    "app/lib/screens/management/fork_extras_screen.dart": {
+      "covered": 201,
+      "total": 241
+    },
     "app/lib/screens/management/mqtt_screen.dart": {
       "covered": 118,
       "total": 125
@@ -242,8 +246,8 @@
       "total": 40
     },
     "app/lib/shell/routes.dart": {
-      "covered": 30,
-      "total": 30
+      "covered": 32,
+      "total": 32
     },
     "app/lib/theme.dart": {
       "covered": 6,
@@ -428,6 +432,10 @@
     "packages/repeater_core/lib/src/fleet/envelope.dart": {
       "covered": 73,
       "total": 76
+    },
+    "packages/repeater_core/lib/src/fork_extras.dart": {
+      "covered": 66,
+      "total": 66
     },
     "packages/repeater_core/lib/src/mqtt.dart": {
       "covered": 46,

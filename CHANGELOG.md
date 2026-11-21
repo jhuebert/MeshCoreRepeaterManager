@@ -8,6 +8,7 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ### Added
 
+- **All five smaller fork features now have controls.** One screen covers radio2 (with the enabled preset shown read only), the battery gate, the mesh clock, the bot and the CPU/RX power profile. Validation mirrors the firmware: resume above suspend, votes within slots, bounded tolerance, valid bot channels and the radio2 versus power-saving exclusion.
 - **WiFi update for stock ESP32 repeaters.** The admin CLI arms the built-in update page, the app checks its identity, warns that it has no password, then uploads one `firmware` file part with the uppercase MD5 the firmware requires. Progress is shown and the result is only claimed after a re-login and version read. If the repeater opens the `MeshCore-OTA` hotspot, join it in system settings and return to the screen.
 
 - **MQTT observer configuration.** A status card reads the combined MQTT and Wi-Fi dashboards, two broker cards stage their settings, and a shared section covers the IATA code, NTP, interval and publish switches. Password, token and Wi-Fi password fields are write only: the app never reads, caches or logs them, and clears the draft after saving. Reconnecting Wi-Fi asks first.
