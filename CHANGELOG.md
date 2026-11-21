@@ -6,6 +6,10 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ## [Unreleased]
 
+### Fixed
+
+- **Capability detection now recognises real fork replies.** A read-only probe against a live `v1.18.0-ota2` repeater showed that bare `filter` returns a status line and `get cpu.freq` returns a bare `> 80`, neither of which the first classifier accepted. Both replies are now regression fixtures; no repeaters were changed during the check.
+
 ### Added
 
 - **Fleet jobs from one composer.** A job is one group text message with an id, optional tags, ACK mode, device-side schedule and inter-line delay. The composer validates the script, counts bytes against the companion limit and asks before sending. The results screen shows one row per repeater with its ACK or an explicit No reply, and resend reuses the same job id. A bounded queue handles app-side scheduling while the app is running; the fleet PSK stays in memory only.
