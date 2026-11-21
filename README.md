@@ -83,6 +83,10 @@ The **Fork features** screen covers radio2, the battery gate, mesh clock, bot
 and the CPU/RX power profile. Node refusals are shown as the firmware wrote
 them, and an enabled radio2 preset is read only.
 
+The fleet key and MQTT credentials can optionally be remembered in your
+device's secure storage, one field at a time. There is a Forget action for
+each. WiFi, admin and guest passwords are never stored.
+
 The **MQTT** screen configures the observer's two broker slots, shared publish
 settings and Wi-Fi. Passwords and tokens are write only: the app never reads
 them back or saves them.

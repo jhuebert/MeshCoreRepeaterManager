@@ -7,6 +7,7 @@ import 'package:meshcore_repeater_manager/screens/management/fleet_results_scree
 import 'package:meshcore_repeater_manager/screens/management/fleet_screen.dart';
 import 'package:meshcore_repeater_manager/services/ack_collector.dart';
 import 'package:meshcore_repeater_manager/services/cli_service.dart';
+import 'package:meshcore_repeater_manager/services/secret_store.dart';
 import 'package:repeater_core/repeater_core.dart';
 
 import 'support.dart';
@@ -61,6 +62,73 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(commands, contains('fleet on'));
+  });
+
+  testWidgets('the fleet key can be remembered and forgotten', (tester) async {
+    tester.view.physicalSize = const Size(800, 4000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final backend = MemorySecretBackend();
+    final app = _app();
+    app.secretBackendFactory = () => backend;
+    await app.initSecretStore();
+    await _pump(tester, FleetScreen(cli: _cli(<String>[])), app);
+
+    await tester.enterText(find.byKey(const Key('fleet-psk')), 'aabb');
+    await tester.pump();
+    await tester.tap(find.text('Remember on this device'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(await backend.read(SecretField.fleetPsk.storageKey), 'aabb');
+
+    await tester.tap(find.text('Forget stored value'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(await backend.read(SecretField.fleetPsk.storageKey), isNull);
+
+    // Toggling the checkbox off forgets as well.
+    await tester.enterText(find.byKey(const Key('fleet-psk')), 'ccdd');
+    await tester.pump();
+    await tester.tap(find.text('Remember on this device'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.text('Remember on this device'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(await backend.read(SecretField.fleetPsk.storageKey), isNull);
+  });
+
+  testWidgets('the composer button opens a new job screen', (tester) async {
+    final commands = <String>[];
+    await _pump(tester, FleetScreen(cli: _cli(commands)), _app());
+    await tester.tap(find.text('New job'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Fleet composer'), findsOneWidget);
+  });
+
+  testWidgets('a failed write shows the firmware error text', (tester) async {
+    tester.view.physicalSize = const Size(800, 4000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final cli = CliService(
+      exchange: (_, command, {timeout = const Duration(seconds: 45)}) async {
+        if (command == 'fleet') return 'on; chan h=2a; tags 1; seen 0';
+        if (command == 'fleet tag list') return 'tags: north';
+        if (command == 'fleet on') return 'Err - cannot arm';
+        return '> ok';
+      },
+      binary: (_, __,
+              {data = const [],
+              required exactLength,
+              timeout = const Duration(seconds: 10)}) async =>
+          throw const RepeaterRequestException('not used'),
+    );
+    await _pump(tester, FleetScreen(cli: cli), _app());
+    await tester.tap(find.text('Arm fleet'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.textContaining('cannot arm'), findsWidgets);
   });
 
   testWidgets('composer previews the script and byte budget', (tester) async {

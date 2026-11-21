@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore_repeater_manager/app_state.dart';
 import 'package:meshcore_repeater_manager/screens/management/mqtt_screen.dart';
 import 'package:meshcore_repeater_manager/services/cli_service.dart';
+import 'package:meshcore_repeater_manager/services/secret_store.dart';
 import 'package:repeater_core/repeater_core.dart';
 
 import 'support.dart';
@@ -85,6 +86,85 @@ void main() {
     expect(commands, contains('set mqtt1.password secret'));
     // The draft was cleared, so the field is empty again.
     expect(passwordField, findsOneWidget);
+  });
+
+  testWidgets('a remembered secret is prefilled from storage on open',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 5000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final backend = MemorySecretBackend();
+    await backend.write(SecretField.mqtt2Password.storageKey, 'stored-secret');
+    final app = _app();
+    app.secretBackendFactory = () => backend;
+    await app.initSecretStore();
+    await tester.pumpWidget(wrap(app, MqttScreen(cli: _cli(<String>[]))));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final field =
+        tester.widget<TextField>(find.byKey(const Key('mqtt2.password')));
+    expect(field.controller!.text, 'stored-secret');
+    expect(field.obscureText, isTrue);
+  });
+
+  testWidgets('saving a remembered secret updates the stored value',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 5000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final backend = MemorySecretBackend();
+    await backend.write(SecretField.mqtt1Password.storageKey, 'old');
+    final app = _app();
+    app.secretBackendFactory = () => backend;
+    await app.initSecretStore();
+    await tester.pumpWidget(wrap(app, MqttScreen(cli: _cli(<String>[]))));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.enterText(find.byKey(const Key('mqtt1.password')), 'new');
+    await tester.pump();
+    await tester.tap(find.text('Save broker 1'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(await backend.read(SecretField.mqtt1Password.storageKey), 'new');
+  });
+
+  testWidgets('MQTT secrets can be remembered per field and forgotten',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 5000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final backend = MemorySecretBackend();
+    final app = _app();
+    app.secretBackendFactory = () => backend;
+    await app.initSecretStore();
+    await tester.pumpWidget(wrap(app, MqttScreen(cli: _cli(<String>[]))));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.enterText(find.byKey(const Key('mqtt1.password')), 'secret');
+    await tester.pump();
+    await tester.tap(find.text('Remember on this device').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(await backend.read(SecretField.mqtt1Password.storageKey), 'secret');
+
+    await tester.tap(find.text('Forget stored value').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(await backend.read(SecretField.mqtt1Password.storageKey), isNull);
+
+    // Toggling the opt-in off also forgets, without the Forget button.
+    await tester.enterText(find.byKey(const Key('mqtt1.password')), 'again');
+    await tester.pump();
+    await tester.tap(find.text('Remember on this device').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.text('Remember on this device').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(await backend.read(SecretField.mqtt1Password.storageKey), isNull);
   });
 
   testWidgets('Wi-Fi recovery asks before sending', (tester) async {

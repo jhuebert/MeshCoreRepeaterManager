@@ -31,6 +31,7 @@ import 'services/resume_controller.dart';
 
 export 'services/resume_controller.dart' show ResumeCheck;
 import 'services/resume_store.dart';
+import 'services/secret_store.dart';
 import 'services/temp_radio_renewal.dart';
 import 'services/update_flow.dart';
 
@@ -133,6 +134,9 @@ class AppState extends ChangeNotifier {
   /// Test seam for the recovery probe; production builds a real controller.
   ResumeController Function(ResumePlan plan)? resumeControllerFactory;
 
+  /// Test seam for platform secure storage; production uses the plugin.
+  SecretBackend Function()? secretBackendFactory;
+
   UpdateFlow? _flow;
 
   RadioLink? get link => connection.link;
@@ -198,7 +202,11 @@ class AppState extends ChangeNotifier {
   RepeaterDirectory? directory;
   ManagementAuditStore? auditStore;
 
-  /// Fleet state. The PSK is session-only and never persisted.
+  /// Opt-in secret storage. Password fields are never eligible.
+  SecretStore? secretStore;
+
+  /// Fleet state. The PSK is session-only unless the operator opts in to the
+  /// secret store.
   String fleetPsk = '';
   final AckCollector ackCollector = AckCollector();
   FleetStore? fleetStore;
@@ -385,12 +393,24 @@ class AppState extends ChangeNotifier {
           ManagementAuditStore(File('${support.path}/management_audit.json'));
       await auditStore!.load();
       await initFleetServices(support);
+      await initSecretStore();
     } catch (_) {
       // Settings are a convenience; a read failure must not stop the app.
     }
     final lib = await _openLibrary();
     libraryEntries = await lib.list();
     notifyListeners();
+  }
+
+  /// Secret store setup, split out so tests can inject an in-memory backend
+  /// without touching a platform plugin.
+  Future<void> initSecretStore() async {
+    secretStore = SecretStore(backend: secretBackendFactory?.call());
+    secretStore!.addListener(notifyListeners);
+    await secretStore!.load();
+    if (secretStore!.isRemembered(SecretField.fleetPsk)) {
+      fleetPsk = await secretStore!.resolve(SecretField.fleetPsk, fleetPsk);
+    }
   }
 
   /// Fleet stores and scheduler setup, split out so tests can drive it with

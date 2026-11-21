@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../app_state.dart';
 import '../../services/cli_service.dart';
 import '../../services/fleet_service.dart';
+import '../../services/secret_store.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import 'fleet_composer_screen.dart';
@@ -129,20 +130,33 @@ class _FleetScreenState extends State<FleetScreen>
                         fontSize: 12,
                         color: OtaTheme.textMuted)),
               ),
-              const SectionHeader('Channel key (session only)'),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  key: const Key('fleet-psk'),
-                  controller: _psk,
-                  obscureText: true,
-                  autocorrect: false,
-                  onChanged: (_) => _savePsk(),
-                  decoration: const InputDecoration(
-                    labelText: 'Fleet PSK, hex',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
+              const SectionHeader('Channel key'),
+              SecretFieldControl(
+                label: 'Fleet PSK, hex',
+                fieldKey: 'fleet-psk',
+                controller: _psk,
+                eligible: true,
+                storeAvailable: app.secretStore?.available ?? false,
+                remembered:
+                    app.secretStore?.isRemembered(SecretField.fleetPsk) ??
+                        false,
+                onRemember: (value) async {
+                  final store = app.secretStore;
+                  if (store == null) return;
+                  if (value) {
+                    await store.remember(
+                        SecretField.fleetPsk, _psk.text.trim());
+                  } else {
+                    await store.forget(SecretField.fleetPsk);
+                  }
+                },
+                onForget: () async {
+                  await app.secretStore?.forget(SecretField.fleetPsk);
+                  _psk.clear();
+                  _savePsk();
+                },
+                help: 'Without opt-in this stays in memory for this session '
+                    'only. The repeater never echoes the key.',
               ),
               const SectionHeader('Tags on this node'),
               if (_tags.isEmpty)

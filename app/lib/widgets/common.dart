@@ -212,3 +212,84 @@ class StatusPill extends StatelessWidget {
     );
   }
 }
+
+/// A masked secret field with an explicit, per-field opt-in to remembered
+/// storage. [eligible] is false for secrets that can never be stored (the WiFi
+/// password and admin/guest passwords); those get only the session field.
+class SecretFieldControl extends StatelessWidget {
+  const SecretFieldControl({
+    super.key,
+    required this.label,
+    required this.controller,
+    required this.eligible,
+    required this.storeAvailable,
+    required this.remembered,
+    required this.onRemember,
+    required this.onForget,
+    this.help,
+    this.enabled = true,
+    this.fieldKey,
+    this.onChanged,
+  });
+
+  final String label;
+  final String? fieldKey;
+  final ValueChanged<String>? onChanged;
+  final TextEditingController controller;
+  final bool eligible;
+  final bool storeAvailable;
+  final bool remembered;
+  final ValueChanged<bool> onRemember;
+  final VoidCallback onForget;
+  final String? help;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              key: Key(fieldKey ?? label),
+              controller: controller,
+              obscureText: true,
+              autocorrect: false,
+              enabled: enabled,
+              onChanged: onChanged,
+              decoration: InputDecoration(
+                labelText: label,
+                isDense: true,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            if (eligible) ...[
+              CheckboxListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Remember on this device'),
+                subtitle: storeAvailable
+                    ? null
+                    : const Text(
+                        'No secure storage here. This value stays in memory.'),
+                value: remembered,
+                onChanged:
+                    storeAvailable ? (v) => onRemember(v ?? false) : null,
+              ),
+              if (remembered)
+                TextButton(
+                  onPressed: onForget,
+                  child: const Text('Forget stored value'),
+                ),
+            ],
+            if (help != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(help!,
+                    style: const TextStyle(
+                        color: OtaTheme.textMuted, fontSize: 11)),
+              ),
+          ],
+        ),
+      );
+}

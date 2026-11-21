@@ -7,10 +7,22 @@ import 'package:meshcore_repeater_manager/services/ack_collector.dart';
 import 'package:meshcore_repeater_manager/services/fleet_scheduler.dart';
 import 'package:meshcore_repeater_manager/services/management_audit_store.dart';
 import 'package:meshcore_repeater_manager/services/repeater_directory.dart';
+import 'package:meshcore_repeater_manager/services/secret_store.dart';
 
 import 'support.dart';
 
 void main() {
+  test('a remembered fleet key is restored into the session', () async {
+    final backend = MemorySecretBackend();
+    await backend.write(SecretField.fleetPsk.storageKey, 'stored-psk');
+    final app = AppState();
+    app.secretBackendFactory = () => backend;
+    await app.initSecretStore();
+    expect(app.secretStore, isNotNull);
+    expect(app.secretStore!.isRemembered(SecretField.fleetPsk), isTrue);
+    expect(app.fleetPsk, 'stored-psk');
+  });
+
   test('fleet stores and scheduler initialize from a support directory',
       () async {
     final dir = Directory.systemTemp.createTempSync('fleet_init_test');

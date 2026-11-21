@@ -38,7 +38,8 @@ accurate.
   connection indicator/sheet and the repeater picker; `lib/controllers/` owns
   the connection lifecycle shared by every screen. Management activities live
   in `lib/screens/management/`; one screen per command family, all using the
-  shared CLI service and last-known labels.
+  shared CLI service and last-known labels. Secrets are opt-in through `services/secret_store.dart`; the admin password
+  and WiFi password are never eligible.
 - `app/test/` — widget and pure-Dart app tests. `support.dart` has the shared
   fixtures (`FakeLibrary`, `Catalog`, `OtaStatus`/`OtaNodeInfo`, `fakeCli`); use
   it for every screen test instead of touching platform plugins. In-memory
