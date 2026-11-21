@@ -14,6 +14,7 @@ class ManagementScaffold extends StatelessWidget {
     this.onRefresh,
     this.refreshing = false,
     this.actions = const [],
+    this.footer,
   });
 
   final String title;
@@ -21,38 +22,51 @@ class ManagementScaffold extends StatelessWidget {
   final VoidCallback? onRefresh;
   final bool refreshing;
   final List<Widget> actions;
+  final Widget? footer;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: Text(title),
-          actions: [
-            if (onRefresh != null)
-              IconButton(
-                onPressed: refreshing ? null : onRefresh,
-                icon: refreshing
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.refresh),
-                tooltip: 'Refresh',
+  Widget build(BuildContext context) {
+    final bar = footer;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        actions: [
+          if (onRefresh != null)
+            IconButton(
+              onPressed: refreshing ? null : onRefresh,
+              icon: refreshing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh),
+              tooltip: 'Refresh',
+            ),
+          ...actions,
+        ],
+        bottom: refreshing
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(2),
+                child: LinearProgressIndicator(minHeight: 2),
+              )
+            : null,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 24),
+        children: children,
+      ),
+      bottomNavigationBar: bar == null
+          ? null
+          : Material(
+              color: OtaTheme.surface,
+              child: SafeArea(
+                minimum: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                child: bar,
               ),
-            ...actions,
-          ],
-          bottom: refreshing
-              ? const PreferredSize(
-                  preferredSize: Size.fromHeight(2),
-                  child: LinearProgressIndicator(minHeight: 2),
-                )
-              : null,
-        ),
-        body: ListView(
-          padding: const EdgeInsets.only(bottom: 24),
-          children: children,
-        ),
-      );
+            ),
+    );
+  }
 }
 
 /// One input control for a setting, shared by the curated screen and the

@@ -88,6 +88,20 @@ void main() {
     expect(parseStatusReport(payload)!.batteryMilliVolts, 4200);
   });
 
+  test('the exception explains the request that went unanswered', () {
+    const e = RepeaterRequestException('no reply');
+    expect(e.toString(), 'RepeaterRequestException: no reply');
+  });
+
+  test('requestRaw times out as an unknown outcome', () async {
+    final link = FakeDeviceLink();
+    expect(
+      () => RepeaterReqClient(link).requestRaw(_contact(), 0x07,
+          timeout: const Duration(milliseconds: 10)),
+      throwsA(isA<RepeaterRequestException>()),
+    );
+  });
+
   test('a timeout is an unknown outcome, not a success', () async {
     final link = FakeDeviceLink();
     final client = RepeaterReqClient(link);

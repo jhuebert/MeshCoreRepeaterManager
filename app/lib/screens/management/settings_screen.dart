@@ -114,6 +114,13 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
       child: ManagementScaffold(
         title: 'Settings',
         refreshing: _busy,
+        footer: ctrl != null && ctrl.hasChanges
+            ? FilledButton.icon(
+                onPressed: _busy || ctrl.hasValidationErrors ? null : _save,
+                icon: const Icon(Icons.save_outlined),
+                label: const Text('Save'),
+              )
+            : null,
         actions: [
           if (ctrl != null && ctrl.hasChanges)
             Padding(
@@ -161,15 +168,6 @@ class _RepeaterSettingsScreenState extends State<RepeaterSettingsScreen> {
                   onChanged: (v) => setState(() => ctrl.setDraft(spec.key, v)),
                 ),
             ],
-          if (ctrl != null && ctrl.hasChanges)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 16, 12, 0),
-              child: FilledButton.icon(
-                onPressed: _busy || ctrl.hasValidationErrors ? null : _save,
-                icon: const Icon(Icons.save_outlined),
-                label: const Text('Save'),
-              ),
-            ),
         ],
       ),
     );

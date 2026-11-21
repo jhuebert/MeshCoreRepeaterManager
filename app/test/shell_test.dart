@@ -37,6 +37,37 @@ Future<void> _openSheet(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('every named route opens an activity', (tester) async {
+    final navKey = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(ChangeNotifierProvider(
+      create: (_) => AppState(),
+      child: MaterialApp(
+        navigatorKey: navKey,
+        onGenerateRoute: generateRoute,
+        home: const SizedBox(),
+      ),
+    ));
+    for (final name in [
+      AppRoutes.update,
+      AppRoutes.library,
+      AppRoutes.status,
+      AppRoutes.settings,
+      AppRoutes.browser,
+      AppRoutes.cli,
+      AppRoutes.acl,
+      AppRoutes.neighbors,
+    ]) {
+      expect(
+          generateRoute(RouteSettings(name: name)), isA<MaterialPageRoute>());
+      navKey.currentState!.pushNamed(name);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      navKey.currentState!.pop();
+      await tester.pump();
+    }
+    expect(generateRoute(const RouteSettings(name: '/unknown')), isNull);
+  });
+
   testWidgets('named routes open the update activity and the library',
       (tester) async {
     expect(generateRoute(const RouteSettings(name: '/unknown')), isNull);

@@ -64,13 +64,17 @@ class MetricSample {
 /// Reads are synchronous from memory so opening a screen never touches the
 /// mesh; every refresh is explicit.
 class RepeaterCacheStore {
-  RepeaterCacheStore(this.file);
+  RepeaterCacheStore(this.file, {this.persist = true});
 
   /// Keep a bounded history per metric: a year of daily points, or a long
   /// manual-refresh session. Older points are dropped, never silently kept.
   static const maxSamplesPerMetric = 720;
 
   final File file;
+
+  /// In-memory mode for widget tests: real file I/O hangs the fake-async
+  /// zone, but the same cache logic still applies.
+  final bool persist;
   late final VersionedJsonStore _store = VersionedJsonStore(
     file,
     schema: 1,
@@ -80,6 +84,9 @@ class RepeaterCacheStore {
   List<MetricSample> _samples = [];
 
   Future<void> load() async {
+    // In-memory mode keeps values written before load; there is no disk to
+    // read them back from.
+    if (!persist) return;
     final data = await _store.read() ?? const <String, dynamic>{};
     _values = Map<String, dynamic>.from(
         (data['values'] as Map?)?.map((k, v) => MapEntry(k.toString(), v)) ??
@@ -153,10 +160,13 @@ class RepeaterCacheStore {
     await _persist();
   }
 
-  Future<void> _persist() => _store.write({
-        'values': _values,
-        'samples': _samples.map((s) => s.toJson()).toList(),
-      });
+  Future<void> _persist() async {
+    if (!persist) return;
+    await _store.write({
+      'values': _values,
+      'samples': _samples.map((s) => s.toJson()).toList(),
+    });
+  }
 
   Map<String, dynamic> _migrate(Map<String, dynamic> raw, int from) {
     // Schema 0 held bare values. Keep them, labelled as old remote reads.
