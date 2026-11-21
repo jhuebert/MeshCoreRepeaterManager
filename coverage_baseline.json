@@ -41,6 +41,10 @@
       "covered": 72,
       "total": 77
     },
+    "app/lib/screens/management/bulk_settings_screen.dart": {
+      "covered": 119,
+      "total": 134
+    },
     "app/lib/screens/management/charts_screen.dart": {
       "covered": 85,
       "total": 90
@@ -144,6 +148,10 @@
     "app/lib/services/ble_device_link.dart": {
       "covered": 0,
       "total": 332
+    },
+    "app/lib/services/bulk_settings_controller.dart": {
+      "covered": 24,
+      "total": 25
     },
     "app/lib/services/capability_service.dart": {
       "covered": 20,
@@ -254,16 +262,16 @@
       "total": 28
     },
     "app/lib/shell/repeater_hub_screen.dart": {
-      "covered": 82,
-      "total": 94
+      "covered": 83,
+      "total": 95
     },
     "app/lib/shell/repeater_picker_sheet.dart": {
       "covered": 34,
       "total": 40
     },
     "app/lib/shell/routes.dart": {
-      "covered": 40,
-      "total": 40
+      "covered": 42,
+      "total": 42
     },
     "app/lib/theme.dart": {
       "covered": 6,
@@ -420,6 +428,10 @@
     "packages/repeater_core/lib/src/binary_req.dart": {
       "covered": 48,
       "total": 48
+    },
+    "packages/repeater_core/lib/src/bulk_settings.dart": {
+      "covered": 10,
+      "total": 10
     },
     "packages/repeater_core/lib/src/capabilities.dart": {
       "covered": 120,

@@ -87,6 +87,10 @@ The **MQTT** screen configures the observer's two broker slots, shared publish
 settings and Wi-Fi. Passwords and tokens are write only: the app never reads
 them back or saves them.
 
+**Bulk settings** applies one curated setting to a tag-defined group using the
+same fleet channel and per-repeater ACKs. There is no per-repeater login or
+node picker.
+
 With the fleet feature, the **Fleet** screen configures one repeater and
 composes jobs as a single group text message. It previews the exact script,
 counts bytes, and collects one reply per repeater. A repeater that did not

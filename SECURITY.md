@@ -105,8 +105,10 @@ Repeater management adds three kinds of local data, all on the device only:
   confirm the reboot. Device-side HTTP authentication is out of scope, so this
   limitation is disclosed in the UI rather than fixed in firmware.
 - **Fleet scripts execute with the repeater's own privileges.** The composer
-  shows the exact text and asks before sending; received group text is never
-  executed by the app, only key-prefixed ACKs are parsed. The PSK is entered
+  and the bulk-settings screen show the exact text and ask before sending;
+  received group text is never executed by the app, only key-prefixed ACKs are
+  parsed. Bulk settings are restricted to a curated subset of deterministic,
+  low-blast-radius keys with no passwords, keys or radio presets. The PSK is entered
   per session (or explicitly opted into secure storage in a later milestone),
   is never written to the cache, and is not included in logs or exports. A
   missing reply is shown as No reply, never as success.
