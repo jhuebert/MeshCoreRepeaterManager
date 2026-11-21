@@ -8,6 +8,8 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ### Added
 
+- **Management is locked during an update and serial-only limits are explained.** While staging, transfer, apply or verification is active, management tiles and the route/identify controls are locked so no command can interleave with the windowed transfer. The command line now lists the operations that need physical or serial access and the remote alternative for each.
+
 - **Filter rule backup and restore.** The filter screen exports the current rules as schema-versioned JSON or as ready to paste `filter add` commands. Import validates the whole set before anything is sent, reports the reason for a bad rule, and sends the exact commands after validation. The audit log can now be filtered by time range, family, outcome and repeater, and its export always covers the whole log.
 
 - **A global repeater route control.** The hub and every management screen open the same routing sheet. It replaces the OTA-only path field: zero hop, direct or explicit hops are validated and pushed to the companion's saved contact path, so settings, status, CLI and updates all use the same route. The hub identity card shows the active route.

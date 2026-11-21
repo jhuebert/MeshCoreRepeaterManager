@@ -144,6 +144,7 @@ class RepeaterHubScreen extends StatelessWidget {
     final hasMqtt = caps?.mqtt ?? false;
     final hasFleet = caps?.fleet ?? false;
     final writeReason = app.canWrite ? '' : 'Sign in with write access';
+    final lockedByUpdate = app.updateInProgress;
     // A locked fork tile opens the firmware activity; a tile locked by role
     // shows why and is not tappable. Writes need a read-write session.
     String forkReason(bool capabilityOk) => !capabilityOk
@@ -291,7 +292,8 @@ class RepeaterHubScreen extends StatelessWidget {
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: OutlinedButton.icon(
-          onPressed: () => showRoutingSheet(context),
+          onPressed:
+              app.updateInProgress ? null : () => showRoutingSheet(context),
           icon: const Icon(Icons.route),
           label: Text('Route: ${_routeLabel(app)}'),
         ),
@@ -300,7 +302,7 @@ class RepeaterHubScreen extends StatelessWidget {
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: OutlinedButton.icon(
-          onPressed: app.identifying
+          onPressed: app.identifying || app.updateInProgress
               ? null
               : () => app.identifyCapabilities(force: true),
           icon: app.identifying
@@ -339,7 +341,12 @@ class RepeaterHubScreen extends StatelessWidget {
             style: TextStyle(color: OtaTheme.textMuted, fontSize: 12),
           ),
         ),
-      for (final (icon, title, body, route, unlocked, reason) in tiles)
+      for (final (icon, title, body, route, unlocked, reason) in lockedByUpdate
+          ? tiles
+              .map((t) =>
+                  (t.$1, t.$2, t.$3, t.$4, false, 'An update is in progress'))
+              .toList()
+          : tiles)
         ActivityTile(
           icon: icon,
           title: title,

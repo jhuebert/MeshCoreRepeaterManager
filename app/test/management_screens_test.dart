@@ -201,6 +201,9 @@ void main() {
 
   testWidgets('CLI screen confirms dangerous commands and keeps a transcript',
       (tester) async {
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
     final commands = <String>[];
     final cli = fakeCli(
       replies: {'ver': 'v1.18.0', 'reboot': 'OK, rebooting'},
@@ -225,11 +228,16 @@ void main() {
   });
 
   testWidgets('CLI screen refuses serial-only commands in app', (tester) async {
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
     await _pump(tester, CliScreen(cli: fakeCli()), _app());
+    expect(find.text('NOT AVAILABLE REMOTELY'), findsOneWidget);
+    expect(find.textContaining('get prv.key:'), findsOneWidget);
     await tester.enterText(find.byType(TextField).last, 'erase');
     await tester.tap(find.text('Run'));
     await tester.pump();
-    expect(find.textContaining('Not available remotely'), findsOneWidget);
+    expect(find.textContaining('Not available remotely'), findsWidgets);
   });
 
   testWidgets('ACL screen lists entries and guards the companion own key',

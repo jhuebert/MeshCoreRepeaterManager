@@ -58,6 +58,13 @@ void main() {
     expect(find.text('Sign in with write access'), findsNothing);
   });
 
+  testWidgets('an active update locks management activities', (tester) async {
+    final app = _app(3);
+    app.updatePhase = UpdatePhase.transferring;
+    await _pumpHub(tester, app);
+    expect(find.textContaining('An update is in progress'), findsWidgets);
+  });
+
   testWidgets('connection sheet shows the session request count and budget',
       (tester) async {
     final app = _app(3);

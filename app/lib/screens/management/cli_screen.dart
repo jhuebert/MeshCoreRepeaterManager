@@ -139,6 +139,40 @@ class _CliScreenState extends State<CliScreen> {
               style: TextStyle(color: OtaTheme.textMuted, fontSize: 12),
             ),
           ),
+          const SectionHeader('Not available remotely'),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'These commands need physical or serial access. The app '
+                      'never offers them and shows the reason if you type one.',
+                      style: TextStyle(
+                          color: OtaTheme.textMuted, fontSize: 12, height: 1.3),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                        'get prv.key: private keys are never exposed remotely.',
+                        style: TextStyle(fontSize: 11)),
+                    Text('get acl: use the Access list screen instead.',
+                        style: TextStyle(fontSize: 11)),
+                    Text('log dump: use GET /log on the WiFi update page.',
+                        style: TextStyle(fontSize: 11)),
+                    Text(
+                        'stats-core, stats-radio, stats-packets: use one '
+                        'binary status request.',
+                        style: TextStyle(fontSize: 11)),
+                    Text('erase, region load: serial access only.',
+                        style: TextStyle(fontSize: 11)),
+                  ],
+                ),
+              ),
+            ),
+          ),
           const SectionHeader('Quick commands'),
           SizedBox(
             height: 40,

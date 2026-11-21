@@ -323,6 +323,19 @@ class AppState extends ChangeNotifier {
   // ---------------- update ----------------
 
   UpdatePhase updatePhase = UpdatePhase.idle;
+
+  /// Management must not interleave with a live update: the update activity
+  /// owns the CLI and binary exchanges for these phases.
+  bool get updateInProgress => switch (updatePhase) {
+        UpdatePhase.comparing ||
+        UpdatePhase.staging ||
+        UpdatePhase.transferring ||
+        UpdatePhase.readyToApply ||
+        UpdatePhase.applying ||
+        UpdatePhase.verifying =>
+          true,
+        _ => false,
+      };
   TransferProgress? progress;
   final List<String> log = [];
   bool cancelRequested = false;
