@@ -211,6 +211,14 @@ class RepeaterHubScreen extends StatelessWidget {
         fork && confirmed,
         'Update-enabled fork'
       ),
+      (
+        Icons.cloud_outlined,
+        'MQTT',
+        'Configure the observer and two brokers.',
+        AppRoutes.mqtt,
+        caps?.mqtt ?? false,
+        'Update-enabled fork'
+      ),
     ];
     return [
       Padding(
