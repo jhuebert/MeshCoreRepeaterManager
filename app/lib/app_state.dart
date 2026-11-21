@@ -13,8 +13,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:repeater_core/repeater_core.dart';
 
 import 'controllers/connection_controller.dart';
+import 'services/ack_collector.dart';
 import 'services/capability_service.dart';
 import 'services/cli_service.dart';
+import 'services/fleet_scheduler.dart';
+import 'services/fleet_sender.dart';
+import 'services/fleet_store.dart';
 import 'services/firmware_library.dart';
 import 'services/management_audit_store.dart';
 import 'services/github_source.dart';
@@ -85,6 +89,7 @@ class AppState extends ChangeNotifier {
     connection.onAdopt = _adoptLink;
     connection.onLost = _clearNodeFacts;
     connection.onUnexpectedMessage = log_;
+    connection.onDrainedFrame = (frame) => ackCollector.handleFrame(frame);
   }
 
   // ---------------- transport ----------------
@@ -179,6 +184,12 @@ class AppState extends ChangeNotifier {
 
   RepeaterDirectory? directory;
   ManagementAuditStore? auditStore;
+
+  /// Fleet state. The PSK is session-only and never persisted.
+  String fleetPsk = '';
+  final AckCollector ackCollector = AckCollector();
+  FleetStore? fleetStore;
+  FleetScheduler? fleetScheduler;
 
   // ---------------- firmware selection ----------------
 
@@ -360,12 +371,39 @@ class AppState extends ChangeNotifier {
       auditStore =
           ManagementAuditStore(File('${support.path}/management_audit.json'));
       await auditStore!.load();
+      await initFleetServices(support);
     } catch (_) {
       // Settings are a convenience; a read failure must not stop the app.
     }
     final lib = await _openLibrary();
     libraryEntries = await lib.list();
     notifyListeners();
+  }
+
+  /// Fleet stores and scheduler setup, split out so tests can drive it with
+  /// a plain directory instead of a platform plugin.
+  Future<void> initFleetServices(Directory support) async {
+    fleetStore = FleetStore(File('${support.path}/fleet.json'));
+    await fleetStore!.load();
+    for (final result in fleetStore!.history) {
+      ackCollector.track(result);
+    }
+    fleetScheduler = FleetScheduler(
+      save: (jobs) =>
+          fleetStore!.saveQueue(jobs.map((j) => j.toJson()).toList()),
+      onDue: (job) async {
+        final link = connection.link;
+        if (link == null) return;
+        await FleetSender(
+          link: link,
+          pskHex: fleetPsk,
+          senderName: connection.companionName,
+        ).send(job.script);
+      },
+    );
+    await fleetScheduler!.load(
+        fleetStore!.queue.map((q) => ScheduledFleetJob.fromJson(q)).toList());
+    fleetScheduler!.start();
   }
 
   Future<void> setOfflineMode(bool value) async {
@@ -466,6 +504,30 @@ class AppState extends ChangeNotifier {
       audit: auditStore,
       repeaterKeyHex: t.publicKeyHex,
     );
+  }
+
+  /// Fleet jobs are group messages, not CLI writes, but still go in the audit
+  /// log. The PSK and command output are never part of the entry.
+  Future<void> recordFleetSend(String id, String script) async {
+    await auditStore?.record(
+      'fleet job $id\n$script',
+      repeaterKeyHex: target?.publicKeyHex ?? '',
+      family: 'fleet',
+      replyKind: 'sent',
+      outcome: AuditOutcome.ok,
+    );
+  }
+
+  /// Resend uses the same id so a repeater that already ran the job does not
+  /// run it again; only nodes that missed it pick it up.
+  Future<void> resendFleetJob(FleetJobResult job) async {
+    final link = connection.link;
+    if (link == null) return;
+    await FleetSender(
+      link: link,
+      pskHex: fleetPsk,
+      senderName: connection.companionName,
+    ).send(job.script);
   }
 
   /// Cache store for the selected repeater. Null before services are ready.

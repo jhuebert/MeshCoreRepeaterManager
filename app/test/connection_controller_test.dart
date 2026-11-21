@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:companion_client/companion_client.dart';
 import 'package:device_link/device_link.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mesh_protocol/mesh_protocol.dart';
 import 'package:meshcore_repeater_manager/controllers/connection_controller.dart';
 
 void main() {
@@ -62,6 +65,32 @@ void main() {
     await controller.reconnect();
     expect(endpoints, ['10.0.0.8:4000', '10.0.0.8:4000']);
     expect(controller.phase, ConnectionPhase.connected);
+  });
+
+  test('a drained frame is offered to the ACK collector before being dropped',
+      () async {
+    final link = FakeDeviceLink();
+    var sent = false;
+    link.frameHandler = (frame) {
+      if (frame[0] != cmdSyncNextMessage) return;
+      if (!sent) {
+        sent = true;
+        link.simulatePush(Uint8List.fromList([respCodeChannelMsgRecv]));
+      } else {
+        link.simulatePush(Uint8List.fromList([respCodeNoMoreMessages]));
+      }
+    };
+    final controller = ConnectionController(
+      tcpLinkFactory: (_, __) => link,
+      clientFactory: (l) => CompanionClient(l),
+    )..onDrainedFrame = (_) {};
+    await controller.connectTcp(host: '127.0.0.1', port: 5000);
+    final seen = <Uint8List>[];
+    controller.onDrainedFrame = seen.add;
+    final forwarded = <Uint8List>[];
+    expect(await controller.drainAfterLogin(onFrame: forwarded.add), 1);
+    expect(seen, hasLength(1));
+    expect(forwarded, hasLength(1));
   });
 
   test('draining without a link is a no-op', () async {

@@ -8,6 +8,7 @@ import '../screens/management/charts_screen.dart';
 import '../screens/management/cli_screen.dart';
 import '../screens/management/filter_rule_editor_screen.dart';
 import '../screens/management/filter_screen.dart';
+import '../screens/management/fleet_screen.dart';
 import '../screens/management/neighbors_screen.dart';
 import '../screens/management/settings_screen.dart';
 import '../screens/management/status_screen.dart';
@@ -26,6 +27,7 @@ class AppRoutes {
   static const stats = '/stats';
   static const filter = '/filter';
   static const filterEditor = '/filter-editor';
+  static const fleet = '/fleet';
 }
 
 Route<dynamic>? generateRoute(RouteSettings settings) =>
@@ -53,5 +55,7 @@ Route<dynamic>? generateRoute(RouteSettings settings) =>
           builder: (_) => const FilterScreen(), settings: settings),
       AppRoutes.filterEditor => MaterialPageRoute(
           builder: (_) => const FilterRuleEditorScreen(), settings: settings),
+      AppRoutes.fleet => MaterialPageRoute(
+          builder: (_) => const FleetScreen(), settings: settings),
       _ => null,
     };

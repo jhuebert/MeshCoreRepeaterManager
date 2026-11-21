@@ -59,6 +59,7 @@ void main() {
       AppRoutes.stats,
       AppRoutes.filter,
       AppRoutes.filterEditor,
+      AppRoutes.fleet,
     ]) {
       expect(
           generateRoute(RouteSettings(name: name)), isA<MaterialPageRoute>());

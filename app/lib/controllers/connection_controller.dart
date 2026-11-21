@@ -43,6 +43,10 @@ class ConnectionController extends ChangeNotifier {
   /// pending fleet job.
   void Function(String message)? onUnexpectedMessage;
 
+  /// Drained frames are offered here before being dropped, so a late fleet ACK
+  /// can still be matched to a pending job.
+  void Function(Uint8List frame)? onDrainedFrame;
+
   RadioLink? get link => _link;
   CompanionClient? get client => _client;
   String? get bleDeviceId => _bleDeviceId;
@@ -132,7 +136,11 @@ class ConnectionController extends ChangeNotifier {
   Future<int> drainAfterLogin({
     void Function(Uint8List frame)? onFrame,
   }) =>
-      _client?.drainMessages(onFrame: onFrame) ?? Future.value(0);
+      _client?.drainMessages(onFrame: (frame) {
+        onDrainedFrame?.call(frame);
+        onFrame?.call(frame);
+      }) ??
+      Future.value(0);
 
   Future<void> disconnect() async {
     final hadLink = _link != null;

@@ -207,7 +207,7 @@ class RepeaterHubScreen extends StatelessWidget {
         Icons.groups_outlined,
         'Fleet',
         'Send one job to a group of repeaters and collect replies.',
-        AppRoutes.update,
+        AppRoutes.fleet,
         fork && confirmed,
         'Update-enabled fork'
       ),
