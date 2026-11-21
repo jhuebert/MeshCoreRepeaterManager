@@ -19,9 +19,11 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:ota_core/ota_core.dart';
+import 'package:repeater_core/repeater_core.dart';
 
 import 'package:meshcore_repeater_manager/app_state.dart';
 import 'package:meshcore_repeater_manager/screens/connect_screen.dart';
+import 'package:meshcore_repeater_manager/shell/repeater_hub_screen.dart';
 import 'package:meshcore_repeater_manager/screens/firmware_screen.dart';
 import 'package:meshcore_repeater_manager/screens/login_screen.dart';
 import 'package:meshcore_repeater_manager/screens/radio_settings_screen.dart';
@@ -119,6 +121,25 @@ List<_Shot> _shots() {
   }
 
   return [
+    _Shot(
+      file: '00-hub.png',
+      state: () {
+        final app = _signedInApp();
+        app.connectionPhase = ConnectionPhase.connected;
+        app.companionName = 'MeshCore-nc3';
+        app.loginPermission = 3;
+        app.capabilities = const RepeaterCapabilities(
+          firmwareKind: FirmwareKind.fork,
+          confidence: CapabilityConfidence.confirmed,
+          ota: true,
+          filter: true,
+          fleet: true,
+          mqtt: true,
+        );
+        return app;
+      },
+      screen: (app) => const RepeaterHubScreen(),
+    ),
     _Shot(
       file: '01-connect.png',
       state: () {

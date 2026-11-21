@@ -279,24 +279,18 @@ class RepeaterHubScreen extends StatelessWidget {
     return [
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: app.identifying
-                    ? null
-                    : () => app.identifyCapabilities(force: true),
-                icon: app.identifying
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.search),
-                label: const Text('Identify firmware'),
-              ),
-            ),
-          ],
+        child: OutlinedButton.icon(
+          onPressed: app.identifying
+              ? null
+              : () => app.identifyCapabilities(force: true),
+          icon: app.identifying
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.search),
+          label: const Text('Identify firmware'),
         ),
       ),
       const SizedBox(height: 6),

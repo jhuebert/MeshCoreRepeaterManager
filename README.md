@@ -111,6 +111,8 @@ yourself out by accident.
 
 ## Getting started
 
+![Repeater Hub](docs/images/00-hub.png)
+
 The app walks you through eight steps. You can go back at any point; nothing
 is changed on the repeater until you press **Start update**, and nothing boots
 until you confirm at the end. The exact comparison with the repeater's running
