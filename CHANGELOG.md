@@ -6,6 +6,10 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ## [Unreleased]
 
+### Added
+
+- **MQTT observer configuration.** A status card reads the combined MQTT and Wi-Fi dashboards, two broker cards stage their settings, and a shared section covers the IATA code, NTP, interval and publish switches. Password, token and Wi-Fi password fields are write only: the app never reads, caches or logs them, and clears the draft after saving. Reconnecting Wi-Fi asks first.
+
 ### Fixed
 
 - **Capability detection now recognises real fork replies.** A read-only probe against a live `v1.18.0-ota2` repeater showed that bare `filter` returns a status line and `get cpu.freq` returns a bare `> 80`, neither of which the first classifier accepted. Both replies are now regression fixtures; no repeaters were changed during the check.

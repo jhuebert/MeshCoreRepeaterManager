@@ -69,6 +69,10 @@ turns into battery, traffic and uptime trends. Charts are drawn from those
 saved readings, so opening the screen costs no airtime. Automatic refresh is
 off by default and stops after a bounded number of attempts.
 
+The **MQTT** screen configures the observer's two broker slots, shared publish
+settings and Wi-Fi. Passwords and tokens are write only: the app never reads
+them back or saves them.
+
 With the fleet feature, the **Fleet** screen configures one repeater and
 composes jobs as a single group text message. It previews the exact script,
 counts bytes, and collects one reply per repeater. A repeater that did not

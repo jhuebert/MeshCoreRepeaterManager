@@ -73,6 +73,10 @@
       "covered": 79,
       "total": 88
     },
+    "app/lib/screens/management/mqtt_screen.dart": {
+      "covered": 118,
+      "total": 125
+    },
     "app/lib/screens/management/neighbors_screen.dart": {
       "covered": 72,
       "total": 88
@@ -222,16 +226,16 @@
       "total": 28
     },
     "app/lib/shell/repeater_hub_screen.dart": {
-      "covered": 80,
-      "total": 92
+      "covered": 81,
+      "total": 93
     },
     "app/lib/shell/repeater_picker_sheet.dart": {
       "covered": 34,
       "total": 40
     },
     "app/lib/shell/routes.dart": {
-      "covered": 26,
-      "total": 26
+      "covered": 28,
+      "total": 28
     },
     "app/lib/theme.dart": {
       "covered": 6,
@@ -390,8 +394,8 @@
       "total": 48
     },
     "packages/repeater_core/lib/src/capabilities.dart": {
-      "covered": 110,
-      "total": 126
+      "covered": 120,
+      "total": 129
     },
     "packages/repeater_core/lib/src/chart_sample.dart": {
       "covered": 37,
@@ -416,6 +420,10 @@
     "packages/repeater_core/lib/src/fleet/envelope.dart": {
       "covered": 73,
       "total": 76
+    },
+    "packages/repeater_core/lib/src/mqtt.dart": {
+      "covered": 46,
+      "total": 46
     },
     "packages/repeater_core/lib/src/reports.dart": {
       "covered": 57,
