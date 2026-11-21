@@ -38,7 +38,8 @@ accurate.
   connection indicator/sheet and the repeater picker; `lib/controllers/` owns
   the connection lifecycle shared by every screen. Management activities live
   in `lib/screens/management/`; one screen per command family, all using the
-  shared CLI service and last-known labels. Secrets are opt-in through
+  shared CLI service and last-known labels. `lib/shell/routing_sheet.dart`
+  owns the global per-repeater path override. Secrets are opt-in through
   `services/secret_store.dart`; the admin password and WiFi password are never
   eligible.
 - `app/test/` — widget and pure-Dart app tests. `support.dart` has the shared

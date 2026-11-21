@@ -25,6 +25,9 @@ void main() {
         confidence: CapabilityConfidence.confirmed,
         ota: true,
       );
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
     await tester.pumpWidget(wrap(app, const RepeaterHubScreen()));
 
     expect(find.text('Roof'), findsOneWidget);
@@ -37,6 +40,9 @@ void main() {
   testWidgets('an unidentified repeater is not claimed unsupported',
       (tester) async {
     final app = connectedApp();
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
     await tester.pumpWidget(wrap(app, const RepeaterHubScreen()));
     expect(find.textContaining('Firmware has not been identified yet'),
         findsOneWidget);
@@ -45,6 +51,9 @@ void main() {
   testWidgets('write tiles are locked without a write-capable session',
       (tester) async {
     final app = connectedApp();
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
     await tester.pumpWidget(wrap(app, const RepeaterHubScreen()));
     await tester.drag(find.byType(ListView), const Offset(0, -600));
     await tester.pump();
@@ -58,6 +67,9 @@ void main() {
         firmwareKind: FirmwareKind.stock,
         confidence: CapabilityConfidence.confirmed,
       );
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
     await tester.pumpWidget(wrap(app, const RepeaterHubScreen()));
     expect(find.text('Stock'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -400));

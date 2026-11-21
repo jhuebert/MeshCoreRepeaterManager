@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'connection_sheet.dart';
 import 'repeater_picker_sheet.dart';
+import 'routing_sheet.dart';
 import 'routes.dart';
 
 /// The landing screen. Management activities are tiles; nothing loads mesh
@@ -98,6 +99,7 @@ class RepeaterHubScreen extends StatelessWidget {
                               : 'Repeater answered the update check'),
                     ),
                     InfoRow(label: 'Access', value: app.permissionLabel),
+                    InfoRow(label: 'Route', value: _routeLabel(app)),
                   ],
                 ),
               ),
@@ -126,6 +128,13 @@ class RepeaterHubScreen extends StatelessWidget {
 
   static String _label(String value) =>
       value.isEmpty ? value : value[0].toUpperCase() + value.substring(1);
+
+  static String _routeLabel(AppState app) {
+    final path = app.manualRoutePath.trim();
+    if (path == '0') return 'Direct';
+    if (path.isNotEmpty) return 'Via $path';
+    return app.target?.hasDirectRoute == true ? 'Saved direct' : 'Zero hop';
+  }
 
   List<Widget> _activityTiles(
       BuildContext context, AppState app, RepeaterCapabilities? caps) {
@@ -279,6 +288,15 @@ class RepeaterHubScreen extends StatelessWidget {
       ),
     ];
     return [
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: OutlinedButton.icon(
+          onPressed: () => showRoutingSheet(context),
+          icon: const Icon(Icons.route),
+          label: Text('Route: ${_routeLabel(app)}'),
+        ),
+      ),
+      const SizedBox(height: 6),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: OutlinedButton.icon(

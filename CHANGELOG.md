@@ -8,6 +8,8 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ### Added
 
+- **A global repeater route control.** The hub and every management screen open the same routing sheet. It replaces the OTA-only path field: zero hop, direct or explicit hops are validated and pushed to the companion's saved contact path, so settings, status, CLI and updates all use the same route. The hub identity card shows the active route.
+
 - **SoftAP join for WiFi updates.** If the update page is unreachable after `start ota`, the app tries to join `MeshCore-OTA` through the desktop OS tooling, reconnects the companion, and retries the identity read. Where the OS refuses or has no supported path, a manual-join screen explains what to do and a Continue button retries. No network change is attempted on mobile.
 
 - **Optional remembered secrets.** The fleet channel key and the MQTT usernames, passwords and topic tokens can be remembered in platform secure storage, one field at a time, with a Forget action. The opt-in is unavailable when the device has no secure storage, and WiFi, admin and guest passwords are never eligible. Remembered fleet keys are restored on startup; secret fields are still write only and never read back from the repeater.

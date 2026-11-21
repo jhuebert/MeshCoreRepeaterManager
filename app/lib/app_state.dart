@@ -2107,6 +2107,34 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Push the current path override into the companion's saved contact record
+  /// so management commands and the OTA flow use the same route. Returns a
+  /// human readable error, or null on success. An empty path means zero hop.
+  Future<String?> applyRoute() async {
+    final t = target;
+    final link = connection.link;
+    if (t == null || link == null) {
+      return 'Connect a companion and choose a repeater first.';
+    }
+    final entered = manualRoutePath.trim();
+    try {
+      final route = entered.isEmpty
+          ? OtaRoute.zeroHop()
+          : entered == '0'
+              ? OtaRoute.zeroHop(manual: true)
+              : OtaRoute.parsePathList(entered);
+      await link.setContactPath(t,
+          path: route.path, encodedPathLen: route.encodedPathLen);
+      manualRouteError = null;
+      notifyListeners();
+      return null;
+    } catch (e) {
+      manualRouteError = '$e';
+      notifyListeners();
+      return 'Could not apply the route: $e';
+    }
+  }
+
   void log_(String message) {
     final ts = DateTime.now().toIso8601String().substring(11, 19);
     log.add('[$ts] $message');

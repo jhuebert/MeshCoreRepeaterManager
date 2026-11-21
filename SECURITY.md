@@ -106,6 +106,7 @@ Repeater management adds three kinds of local data, all on the device only:
   confirm the reboot. Device-side HTTP authentication is out of scope, so this
   limitation is disclosed in the UI rather than fixed in firmware.
 - **Secrets are remembered only by explicit opt-in.** The fleet PSK and MQTT username, password and token for each broker may be stored in platform secure storage, one field at a time. WiFi and admin/guest passwords are never eligible. Where the platform has no secure storage the opt-in is disabled and the value stays in memory. No secret is written to the cache, audit log, exports or diagnostics.
+- **Route changes are explicit and validated.** The routing sheet only accepts the firmware's path grammar and reports a failed companion write instead of assuming the new path landed. A command with no usable route fails clearly and is not queued.
 - **Fleet scripts execute with the repeater's own privileges.** The composer
   and the bulk-settings screen show the exact text and ask before sending;
   received group text is never executed by the app, only key-prefixed ACKs are

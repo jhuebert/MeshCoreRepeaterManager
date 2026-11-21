@@ -76,6 +76,11 @@ password, so only use it on a trusted network. If the repeater opens a
 to a short manual-join screen. On mobile, join that network in your device
 settings first.
 
+The **route** button on the hub and on every management screen sets how
+messages reach the repeater. Zero hop, direct and explicit hop paths are
+validated and saved on the companion, so all management and the firmware
+update use one route.
+
 **Operations** holds one-shot maintenance actions, **Diagnostics** covers
 region, sensors, GPS, bridge keys and board facts, and **History** shows the
 local record of management writes. Changing the node identity asks for a typed

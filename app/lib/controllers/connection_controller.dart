@@ -99,6 +99,16 @@ class ConnectionController extends ChangeNotifier {
         return tcp;
       });
 
+  /// Install a link without the full connect and drain lifecycle. Widget tests
+  /// use this so a fake link never waits on platform timers in the fake-async
+  /// zone; production always goes through [connectTcp] or BLE.
+  @visibleForTesting
+  void attachForTest(RadioLink link, CompanionClient client) {
+    _link = link;
+    _client = client;
+    phase = ConnectionPhase.connected;
+  }
+
   Future<void> _connect(Future<RadioLink> Function() build) async {
     await disconnect();
     phase = ConnectionPhase.connecting;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:repeater_core/repeater_core.dart';
 
+import '../shell/routing_sheet.dart';
 import '../theme.dart';
 import 'common.dart' show LastKnownLabel;
 
@@ -31,6 +32,11 @@ class ManagementScaffold extends StatelessWidget {
       appBar: AppBar(
         title: Text(title),
         actions: [
+          IconButton(
+            onPressed: () => showRoutingSheet(context),
+            icon: const Icon(Icons.route),
+            tooltip: 'Repeater route',
+          ),
           if (onRefresh != null)
             IconButton(
               onPressed: refreshing ? null : onRefresh,
