@@ -235,6 +235,38 @@ class RepeaterHubScreen extends StatelessWidget {
         fork && confirmed,
         'Update-enabled fork'
       ),
+      (
+        Icons.build_outlined,
+        'Operations',
+        'Clock, adverts, logs, reboot and other one-shot actions.',
+        AppRoutes.operations,
+        true,
+        ''
+      ),
+      (
+        Icons.monitor_outlined,
+        'Diagnostics',
+        'Region, sensors, GPS, bridge and board facts.',
+        AppRoutes.diagnostics,
+        true,
+        ''
+      ),
+      (
+        Icons.history,
+        'History',
+        'Local record of management writes with secrets removed.',
+        AppRoutes.audit,
+        true,
+        ''
+      ),
+      (
+        Icons.key,
+        'Node identity',
+        'Change the repeater private key and migrate local data.',
+        AppRoutes.identity,
+        app.canWrite,
+        'Sign in with write access'
+      ),
     ];
     return [
       Padding(

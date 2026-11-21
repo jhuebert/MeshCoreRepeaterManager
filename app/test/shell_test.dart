@@ -63,6 +63,10 @@ void main() {
       AppRoutes.mqtt,
       AppRoutes.wifiOta,
       AppRoutes.extras,
+      AppRoutes.operations,
+      AppRoutes.diagnostics,
+      AppRoutes.audit,
+      AppRoutes.identity,
     ]) {
       expect(
           generateRoute(RouteSettings(name: name)), isA<MaterialPageRoute>());

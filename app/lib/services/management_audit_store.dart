@@ -48,11 +48,14 @@ class AuditEntry {
 /// are deliberately not recorded. Secrets are redacted before an entry is
 /// stored, so export is safe to share.
 class ManagementAuditStore {
-  ManagementAuditStore(this.file);
+  ManagementAuditStore(this.file, {this.persist = true});
 
   static const maxEntries = 1000;
 
   final File file;
+
+  /// In-memory mode for widget tests; real I/O stalls the fake-async zone.
+  final bool persist;
   late final VersionedJsonStore _store = VersionedJsonStore(
     file,
     schema: 1,
@@ -61,6 +64,7 @@ class ManagementAuditStore {
   List<AuditEntry> _entries = [];
 
   Future<void> load() async {
+    if (!persist) return;
     final data = await _store.read() ?? const <String, dynamic>{};
     _entries = ((data['entries'] as List?) ?? const [])
         .whereType<Map>()
@@ -108,9 +112,12 @@ class ManagementAuditStore {
     await _persist();
   }
 
-  Future<void> _persist() => _store.write({
-        'entries': _entries.map((e) => e.toJson()).toList(),
-      });
+  Future<void> _persist() async {
+    if (!persist) return;
+    await _store.write({
+      'entries': _entries.map((e) => e.toJson()).toList(),
+    });
+  }
 
   /// Mask values of commands that carry credentials. Applied before anything
   /// reaches disk, so a later export cannot leak them.

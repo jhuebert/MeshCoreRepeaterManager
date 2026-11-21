@@ -9,8 +9,12 @@ import '../screens/management/cli_screen.dart';
 import '../screens/management/filter_rule_editor_screen.dart';
 import '../screens/management/filter_screen.dart';
 import '../screens/management/fleet_screen.dart';
+import '../screens/management/audit_log_screen.dart';
+import '../screens/management/diagnostics_screen.dart';
 import '../screens/management/fork_extras_screen.dart';
+import '../screens/management/identity_key_screen.dart';
 import '../screens/management/mqtt_screen.dart';
+import '../screens/management/operations_screen.dart';
 import '../screens/management/wifi_ota_screen.dart';
 import '../screens/management/neighbors_screen.dart';
 import '../screens/management/settings_screen.dart';
@@ -34,6 +38,10 @@ class AppRoutes {
   static const mqtt = '/mqtt';
   static const wifiOta = '/wifi-ota';
   static const extras = '/extras';
+  static const operations = '/operations';
+  static const diagnostics = '/diagnostics';
+  static const audit = '/audit';
+  static const identity = '/identity';
 }
 
 Route<dynamic>? generateRoute(RouteSettings settings) =>
@@ -69,5 +77,13 @@ Route<dynamic>? generateRoute(RouteSettings settings) =>
           builder: (_) => const WifiOtaScreen(), settings: settings),
       AppRoutes.extras => MaterialPageRoute(
           builder: (_) => const ForkExtrasScreen(), settings: settings),
+      AppRoutes.operations => MaterialPageRoute(
+          builder: (_) => const OperationsScreen(), settings: settings),
+      AppRoutes.diagnostics => MaterialPageRoute(
+          builder: (_) => const DiagnosticsScreen(), settings: settings),
+      AppRoutes.audit => MaterialPageRoute(
+          builder: (_) => const AuditLogScreen(), settings: settings),
+      AppRoutes.identity => MaterialPageRoute(
+          builder: (_) => const IdentityKeyScreen(), settings: settings),
       _ => null,
     };
