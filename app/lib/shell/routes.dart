@@ -2,12 +2,24 @@ import 'package:flutter/material.dart';
 
 import '../screens/connect_screen.dart';
 import '../screens/firmware_screen.dart';
+import '../screens/management/acl_screen.dart';
+import '../screens/management/browser_screen.dart';
+import '../screens/management/cli_screen.dart';
+import '../screens/management/neighbors_screen.dart';
+import '../screens/management/settings_screen.dart';
+import '../screens/management/status_screen.dart';
 
 /// Named entry points for activities pushed from the shell. The update keeps
 /// its own in-activity wizard navigation; this only opens the activity.
 class AppRoutes {
   static const update = '/update';
   static const library = '/library';
+  static const status = '/status';
+  static const settings = '/settings';
+  static const browser = '/browser';
+  static const cli = '/cli';
+  static const acl = '/acl';
+  static const neighbors = '/neighbors';
 }
 
 Route<dynamic>? generateRoute(RouteSettings settings) =>
@@ -17,5 +29,17 @@ Route<dynamic>? generateRoute(RouteSettings settings) =>
       AppRoutes.library => MaterialPageRoute(
           builder: (_) => const FirmwareScreen(updateMode: false),
           settings: settings),
+      AppRoutes.status => MaterialPageRoute(
+          builder: (_) => const RepeaterStatusScreen(), settings: settings),
+      AppRoutes.settings => MaterialPageRoute(
+          builder: (_) => const RepeaterSettingsScreen(), settings: settings),
+      AppRoutes.browser => MaterialPageRoute(
+          builder: (_) => const SettingBrowserScreen(), settings: settings),
+      AppRoutes.cli => MaterialPageRoute(
+          builder: (_) => const CliScreen(), settings: settings),
+      AppRoutes.acl => MaterialPageRoute(
+          builder: (_) => const AdminAclScreen(), settings: settings),
+      AppRoutes.neighbors => MaterialPageRoute(
+          builder: (_) => const NeighborsScreen(), settings: settings),
       _ => null,
     };

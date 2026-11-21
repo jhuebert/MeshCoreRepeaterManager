@@ -8,9 +8,11 @@ import 'package:ota_core/ota_core.dart';
 import 'package:provider/provider.dart';
 
 import 'package:meshcore_repeater_manager/app_state.dart';
+import 'package:meshcore_repeater_manager/services/cli_service.dart';
 import 'package:meshcore_repeater_manager/services/firmware_library.dart';
 import 'package:meshcore_repeater_manager/services/github_source.dart';
 import 'package:meshcore_repeater_manager/theme.dart';
+import 'package:repeater_core/repeater_core.dart';
 
 /// Shared fixtures for the app's widget tests. Screens bind to [AppState]
 /// public fields, so a test can build any screen state without a companion.
@@ -131,6 +133,141 @@ Widget wrap(AppState app, Widget child) =>
       child: MaterialApp(
           theme: OtaTheme.dark, debugShowCheckedModeBanner: false, home: child),
     );
+
+/// A CLI service with canned replies, so management widget tests never touch
+/// a companion, a platform plugin or a real binary request.
+CliService fakeCli({
+  Map<String, String> replies = const {},
+  List<String>? commands,
+  RepeaterStatus? status,
+  List<AclEntry>? acl,
+  NeighborPage? neighbours,
+  OwnerInfo? owner,
+}) {
+  final seen = commands ?? <String>[];
+  final reportStatus = status ??
+      RepeaterStatus(
+        batteryMilliVolts: 4100,
+        txQueueLength: 0,
+        noiseFloor: -118,
+        lastRssi: -70,
+        packetsReceived: 120,
+        packetsSent: 90,
+        totalAirTimeSecs: 30,
+        uptimeSecs: 7200,
+        sentFlood: 1,
+        sentDirect: 2,
+        recvFlood: 3,
+        recvDirect: 4,
+        errorEvents: 0,
+        lastSnr: 6.0,
+        directDuplicates: 0,
+        floodDuplicates: 0,
+        rxAirTimeSecs: 10,
+        recvErrors: 0,
+        fetchedAt: DateTime.utc(2026, 11, 21),
+      );
+  final reportAcl = acl ?? <AclEntry>[];
+  final reportNeighbours = neighbours ?? const NeighborPage(0, []);
+  final reportOwner = owner ?? const OwnerInfo('v1.18.0', 'Roof', 'Jason');
+
+  return CliService(
+    exchange: (_, command, {timeout = const Duration(seconds: 45)}) async {
+      seen.add(command);
+      return replies[command] ?? '> ok';
+    },
+    binary: (_, __,
+            {data = const [],
+            required exactLength,
+            timeout = const Duration(seconds: 10)}) async =>
+        _statusBytes(reportStatus),
+    rawBinary: (_, type,
+        {data = const [], timeout = const Duration(seconds: 10)}) async {
+      seen.add('req:${type.toRadixString(16)}');
+      switch (type) {
+        case 0x05:
+          return _aclBytes(reportAcl);
+        case 0x06:
+          return _neighbourBytes(reportNeighbours);
+        case 0x07:
+          return Uint8List.fromList([
+            ...'${reportOwner.version}\n${reportOwner.name}\n${reportOwner.owner}'
+                .codeUnits,
+            0,
+            0,
+          ]);
+        default:
+          return Uint8List(0);
+      }
+    },
+  );
+}
+
+Uint8List _statusBytes(RepeaterStatus s) {
+  final b = ByteData(RepeaterStatus.reportLength);
+  var o = 0;
+  void u16(int v) {
+    b.setUint16(o, v, Endian.little);
+    o += 2;
+  }
+
+  void u32(int v) {
+    b.setUint32(o, v, Endian.little);
+    o += 4;
+  }
+
+  u16(s.batteryMilliVolts);
+  u16(s.txQueueLength);
+  b.setInt16(o, s.noiseFloor, Endian.little);
+  o += 2;
+  b.setInt16(o, s.lastRssi, Endian.little);
+  o += 2;
+  u32(s.packetsReceived);
+  u32(s.packetsSent);
+  u32(s.totalAirTimeSecs);
+  u32(s.uptimeSecs);
+  for (final v in [s.sentFlood, s.sentDirect, s.recvFlood, s.recvDirect]) {
+    u32(v);
+  }
+  u16(s.errorEvents);
+  b.setInt16(o, (s.lastSnr * 4).round(), Endian.little);
+  o += 2;
+  u16(s.directDuplicates);
+  u16(s.floodDuplicates);
+  u32(s.rxAirTimeSecs);
+  u32(s.recvErrors);
+  return b.buffer.asUint8List();
+}
+
+Uint8List _aclBytes(List<AclEntry> entries) {
+  final out = <int>[];
+  for (final e in entries) {
+    out.addAll(e.prefix);
+    out.add(e.permissions);
+  }
+  out.addAll([0, 0, 0]);
+  return Uint8List.fromList(out);
+}
+
+Uint8List _neighbourBytes(NeighborPage page) {
+  final b = ByteData(4 + page.entries.length * (6 + 5));
+  b.setUint16(0, page.total, Endian.little);
+  b.setUint16(2, page.entries.length, Endian.little);
+  var o = 4;
+  for (final n in page.entries) {
+    final prefix = n.prefix.length == 6
+        ? n.prefix
+        : Uint8List.fromList(
+            [...n.prefix, ...List.filled(6 - n.prefix.length, 0)]);
+    for (final x in prefix) {
+      b.setUint8(o++, x);
+    }
+    b.setUint32(o, n.heardSecondsAgo, Endian.little);
+    o += 4;
+    b.setInt8(o++, (n.snr * 4).round());
+  }
+  return b.buffer.asUint8List();
+}
 
 /// An in-memory library: widget tests drive the real selection/delete paths
 /// without touching the filesystem (which a fake-async test would hang on).

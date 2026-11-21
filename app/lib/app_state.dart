@@ -19,6 +19,7 @@ import 'services/firmware_library.dart';
 import 'services/management_audit_store.dart';
 import 'services/github_source.dart';
 import 'services/literal_compression.dart';
+import 'services/repeater_cache_store.dart';
 import 'services/radio_plan.dart';
 import 'services/repeater_directory.dart';
 import 'services/resume_controller.dart';
@@ -161,6 +162,12 @@ class AppState extends ChangeNotifier {
   String? probeError;
 
   bool get otaSupported => nodeStatus != null;
+
+  /// Full login permission byte when signed in: 0 guest, 1 read-only,
+  /// 2 read-write, 3 admin. Null means not signed in. OTA sign-in requires
+  /// admin, so a successful probe records level 3 today.
+  int? loginPermission;
+  bool get canWrite => (loginPermission ?? 0) >= 2;
 
   // ---------------- management ----------------
 
@@ -422,6 +429,7 @@ class AppState extends ChangeNotifier {
     target = null;
     nodeStatus = null;
     nodeInfo = null;
+    loginPermission = null;
     nodePreset = null;
     radio2Enabled = null;
     radio2Status = null;
@@ -443,6 +451,29 @@ class AppState extends ChangeNotifier {
 
   Future<void> refreshContacts() => _refreshContacts();
 
+  /// One serialized gateway for every management screen. The binary client is
+  /// built from the current link so CLI and REQ exchanges share its queue.
+  CliService? managementCli() {
+    final link = connection.link;
+    final client = connection.client;
+    final t = target;
+    if (link == null || client == null || t == null) return null;
+    final req = RepeaterReqClient(link);
+    return CliService(
+      exchange: client.remoteCli,
+      binary: req.request,
+      rawBinary: req.requestRaw,
+      audit: auditStore,
+      repeaterKeyHex: t.publicKeyHex,
+    );
+  }
+
+  /// Cache store for the selected repeater. Null before services are ready.
+  RepeaterCacheStore? cacheForTarget() {
+    final t = target;
+    return t == null ? null : directory?.cacheFor(t.publicKeyHex);
+  }
+
   /// Identify the connected repeater from cached, read-only probes. The OTA
   /// handshake, when it answered, is decisive for the OTA capability.
   Future<void> identifyCapabilities({bool force = false}) async {
@@ -455,12 +486,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     try {
       final service = CapabilityService(
-        CliService(
-          exchange: client.remoteCli,
-          binary: RepeaterReqClient(link).request,
-          audit: auditStore,
-          repeaterKeyHex: t.publicKeyHex,
-        ),
+        managementCli()!,
         cacheFor: (contact) => directory?.cacheFor(contact.publicKeyHex),
       );
       capabilities = await service.identify(
@@ -567,6 +593,9 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     try {
       nodeStatus = await flow.probe(t, secret);
+      // OTA sign-in requires admin on the repeater, so a successful probe is
+      // an admin session for management too.
+      loginPermission = nodeStatus == null ? null : 3;
       // The handshake is what makes a delta base and the board exact, but a
       // node without it still updates (its `running=` stamp is the fallback).
       nodeInfo = nodeStatus == null ? null : await flow.tryNodeInfo(t);
@@ -601,6 +630,7 @@ class AppState extends ChangeNotifier {
     } catch (e) {
       nodeStatus = null;
       nodeInfo = null;
+      loginPermission = null;
       nodePreset = null;
       radio2Enabled = null;
       radio2Status = null;

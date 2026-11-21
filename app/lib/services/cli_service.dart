@@ -36,18 +36,27 @@ typedef BinaryExchange = Future<Uint8List> Function(
   Duration timeout,
 });
 
+typedef RawBinaryExchange = Future<Uint8List> Function(
+  Contact target,
+  int reqType, {
+  List<int> data,
+  Duration timeout,
+});
+
 /// Owns every management exchange with the repeater. The companion client is
 /// not concurrency-safe, so CLI and binary requests share one queue.
 class CliService {
   CliService({
     required this.exchange,
     required this.binary,
+    this.rawBinary,
     this.audit,
     this.repeaterKeyHex,
   });
 
   final CliExchange exchange;
   final BinaryExchange binary;
+  final RawBinaryExchange? rawBinary;
   final ManagementAuditStore? audit;
   String? repeaterKeyHex;
 
@@ -140,4 +149,49 @@ class CliService {
           return null;
         }
       });
+
+  Future<Uint8List?> _raw(
+    Contact target,
+    int reqType,
+    List<int> data, {
+    Duration timeout = const Duration(seconds: 10),
+  }) =>
+      _serial(() async {
+        try {
+          return await rawBinary!(target, reqType,
+              data: data, timeout: timeout);
+        } on RepeaterRequestException {
+          return null;
+        }
+      });
+
+  Future<List<AclEntry>?> accessList(Contact target) async {
+    final payload = await _raw(target, 0x05, accessListRequest);
+    return payload == null ? null : parseAccessList(payload);
+  }
+
+  Future<NeighborPage?> neighbours(
+    Contact target, {
+    int count = 16,
+    int offset = 0,
+    NeighborOrder order = NeighborOrder.newest,
+    int prefixLength = 6,
+  }) async {
+    final request = buildNeighboursRequest(
+      count: count,
+      offset: offset,
+      order: order,
+      prefixLength: prefixLength,
+      nonce: DateTime.now().microsecondsSinceEpoch & 0xFFFFFFFF,
+    );
+    final payload = await _raw(target, 0x06, request);
+    return payload == null
+        ? null
+        : parseNeighbours(payload, prefixLength: prefixLength);
+  }
+
+  Future<OwnerInfo?> owner(Contact target) async {
+    final payload = await _raw(target, 0x07, const []);
+    return payload == null ? null : OwnerInfo.parse(payload);
+  }
 }

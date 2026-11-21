@@ -42,6 +42,16 @@ void main() {
         findsOneWidget);
   });
 
+  testWidgets('write tiles are locked without a write-capable session',
+      (tester) async {
+    final app = connectedApp();
+    await tester.pumpWidget(wrap(app, const RepeaterHubScreen()));
+    await tester.drag(find.byType(ListView), const Offset(0, -600));
+    await tester.pump();
+    // Settings and Access list are locked until sign-in grants write access.
+    expect(find.textContaining('Sign in with write access'), findsNWidgets(2));
+  });
+
   testWidgets('a stock repeater shows fork tiles as locked', (tester) async {
     final app = connectedApp()
       ..capabilities = const RepeaterCapabilities(

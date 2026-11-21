@@ -136,41 +136,72 @@ class RepeaterHubScreen extends StatelessWidget {
       BuildContext context, AppState app, RepeaterCapabilities? caps) {
     final fork = caps?.firmwareKind == FirmwareKind.fork;
     final confirmed = caps?.confidence == CapabilityConfidence.confirmed;
-    final tiles = <(IconData, String, String, bool, String)>[
+    // Locked fork tiles open the firmware activity; stock management tiles
+    // open their own screen. Writes need at least a read-write session.
+    final tiles = <(IconData, String, String, String, bool, String)>[
       (
         Icons.monitor_heart_outlined,
         'Status',
         'Battery, uptime and packet counters from one status request.',
+        AppRoutes.status,
         true,
-        'Available now'
+        ''
       ),
       (
         settingsIcon,
         'Settings',
         'Read and change the repeater settings.',
-        fork && confirmed,
-        'Update-enabled fork'
+        AppRoutes.settings,
+        app.canWrite,
+        'Sign in with write access'
       ),
       (
-        Icons.filter_alt_outlined,
-        'Filter',
-        'Build and check packet rules before sending them.',
-        fork && confirmed,
-        'Update-enabled fork'
+        Icons.manage_search,
+        'Setting browser',
+        'Read or change a key directly.',
+        AppRoutes.browser,
+        true,
+        ''
       ),
       (
         fleetIcon,
-        'Fleet',
-        'Send one job to a group of repeaters and collect replies.',
-        fork && confirmed,
-        'Update-enabled fork'
+        'Access list',
+        'Who can talk to this repeater.',
+        AppRoutes.acl,
+        app.canWrite,
+        'Sign in with write access'
+      ),
+      (
+        Icons.hub_outlined,
+        'Neighbours',
+        'Nearby repeaters and their signal strength.',
+        AppRoutes.neighbors,
+        true,
+        ''
       ),
       (
         Icons.terminal,
         'Command line',
         'Run a raw command for anything without a dedicated screen.',
+        AppRoutes.cli,
         true,
-        'Available now'
+        ''
+      ),
+      (
+        Icons.filter_alt_outlined,
+        'Filter',
+        'Build and check packet rules before sending them.',
+        AppRoutes.update,
+        fork && confirmed,
+        'Update-enabled fork'
+      ),
+      (
+        Icons.groups_outlined,
+        'Fleet',
+        'Send one job to a group of repeaters and collect replies.',
+        AppRoutes.update,
+        fork && confirmed,
+        'Update-enabled fork'
       ),
     ];
     return [
@@ -222,14 +253,14 @@ class RepeaterHubScreen extends StatelessWidget {
             style: TextStyle(color: OtaTheme.textMuted, fontSize: 12),
           ),
         ),
-      for (final (icon, title, body, unlocked, badge) in tiles)
+      for (final (icon, title, body, route, unlocked, reason) in tiles)
         ActivityTile(
           icon: icon,
           title: title,
-          subtitle: unlocked ? body : '$body $badge.',
+          subtitle: unlocked ? body : '$body $reason.',
           locked: !unlocked,
           badge: unlocked ? 'Ready' : 'Locked',
-          onTap: () => Navigator.of(context).pushNamed(AppRoutes.update),
+          onTap: () => Navigator.of(context).pushNamed(route),
         ),
     ];
   }

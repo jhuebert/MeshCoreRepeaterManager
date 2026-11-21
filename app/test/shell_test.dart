@@ -76,6 +76,32 @@ void main() {
     expect(find.text('Connect the companion'), findsOneWidget);
   });
 
+  testWidgets('management routes open their own screens', (tester) async {
+    await tester.pumpWidget(ChangeNotifierProvider(
+      create: (_) {
+        final app = AppState();
+        app.target = contact('Roof');
+        return app;
+      },
+      child: MaterialApp(
+        onGenerateRoute: generateRoute,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () =>
+                  Navigator.of(context).pushNamed(AppRoutes.settings),
+              child: const Text('Open settings'),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('Open settings'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Settings'), findsWidgets);
+  });
+
   testWidgets('shell switches destinations on mobile and desktop',
       (tester) async {
     await tester.pumpWidget(ChangeNotifierProvider(
