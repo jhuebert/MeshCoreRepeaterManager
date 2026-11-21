@@ -51,6 +51,19 @@ class ConnectionSheet extends StatelessWidget {
             InfoRow(label: 'Contacts', value: '${app.contacts.length}'),
             if (app.target != null)
               InfoRow(label: 'Repeater', value: app.target!.name),
+            InfoRow(
+              label: 'Requests this session',
+              value: '${app.requestMeter.count}',
+            ),
+            if (app.requestMeter.overBudget)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  'Mesh budget reached (${app.requestMeter.budget}). '
+                  'Refresh only what you need.',
+                  style: const TextStyle(color: OtaTheme.warn, fontSize: 12),
+                ),
+              ),
             const SizedBox(height: 8),
             Row(
               children: [

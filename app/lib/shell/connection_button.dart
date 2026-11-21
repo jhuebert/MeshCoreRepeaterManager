@@ -18,18 +18,21 @@ class ConnectionButton extends StatelessWidget {
       ConnectionPhase.connecting => ('Connecting', OtaTheme.warn),
       ConnectionPhase.disconnected => ('Offline', OtaTheme.textMuted),
     };
-    return TextButton.icon(
-      onPressed: () => showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        builder: (_) => const ConnectionSheet(),
+    return Tooltip(
+      message: 'Connection: $label. Open connection details.',
+      child: TextButton.icon(
+        onPressed: () => showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          builder: (_) => const ConnectionSheet(),
+        ),
+        icon: Container(
+          width: 9,
+          height: 9,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        label: Text(label),
       ),
-      icon: Container(
-        width: 9,
-        height: 9,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      ),
-      label: Text(label),
     );
   }
 }

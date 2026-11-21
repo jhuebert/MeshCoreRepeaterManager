@@ -48,8 +48,8 @@ void main() {
     await tester.pumpWidget(wrap(app, const RepeaterHubScreen()));
     await tester.drag(find.byType(ListView), const Offset(0, -600));
     await tester.pump();
-    // Settings and Access list are locked until sign-in grants write access.
-    expect(find.textContaining('Sign in with write access'), findsNWidgets(2));
+    // Every write-capable tile is locked until sign-in grants write access.
+    expect(find.textContaining('Sign in with write access'), findsWidgets);
   });
 
   testWidgets('a stock repeater shows fork tiles as locked', (tester) async {

@@ -26,6 +26,7 @@ import 'services/literal_compression.dart';
 import 'services/repeater_cache_store.dart';
 import 'services/radio_plan.dart';
 import 'services/repeater_directory.dart';
+import 'services/request_meter.dart';
 import 'services/resume_controller.dart';
 
 export 'services/resume_controller.dart' show ResumeCheck;
@@ -86,6 +87,7 @@ enum UpdatePhase {
 class AppState extends ChangeNotifier {
   AppState() {
     connection.addListener(notifyListeners);
+    requestMeter.addListener(notifyListeners);
     connection.onAdopt = _adoptLink;
     connection.onLost = _clearNodeFacts;
     connection.onUnexpectedMessage = log_;
@@ -173,6 +175,17 @@ class AppState extends ChangeNotifier {
   /// admin, so a successful probe records level 3 today.
   int? loginPermission;
   bool get canWrite => (loginPermission ?? 0) >= 2;
+  bool get isAdmin => loginPermission == 3;
+  String get permissionLabel => switch (loginPermission) {
+        3 => 'Admin',
+        2 => 'Read-write',
+        1 => 'Read only',
+        0 => 'Guest',
+        _ => 'Not signed in',
+      };
+
+  /// Management exchanges in this session, shown in the connection sheet.
+  final RequestMeter requestMeter = RequestMeter();
 
   // ---------------- management ----------------
 
@@ -439,6 +452,7 @@ class AppState extends ChangeNotifier {
   /// Called by the controller once a new link is adopted. The controller owns
   /// the phase; this rebuilds the update flow and the companion facts.
   Future<void> _adoptLink(RadioLink link) async {
+    requestMeter.reset();
     _flow = UpdateFlow(client: connection.client!, link: link, onLog: log_);
     try {
       final info = await link.selfInfo();
@@ -503,6 +517,7 @@ class AppState extends ChangeNotifier {
       rawBinary: req.requestRaw,
       audit: auditStore,
       repeaterKeyHex: t.publicKeyHex,
+      onRequest: requestMeter.record,
     );
   }
 

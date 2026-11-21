@@ -52,6 +52,7 @@ class CliService {
     this.rawBinary,
     this.audit,
     this.repeaterKeyHex,
+    this.onRequest,
   });
 
   final CliExchange exchange;
@@ -59,6 +60,10 @@ class CliService {
   final RawBinaryExchange? rawBinary;
   final ManagementAuditStore? audit;
   String? repeaterKeyHex;
+
+  /// Counting hook for the session request meter. Called once per actual
+  /// exchange, including idempotent read retries but not local cache reads.
+  final void Function()? onRequest;
 
   Future<void> _tail = Future.value();
 
@@ -79,6 +84,7 @@ class CliService {
       _serial(() async {
         for (var attempt = 0; attempt < (retry ? 2 : 1); attempt++) {
           try {
+            onRequest?.call();
             final text = await exchange(target, command, timeout: timeout);
             return CliReply(text, classifyCliReply(text));
           } on CompanionTimeoutException catch (e) {
@@ -138,6 +144,7 @@ class CliService {
   }) =>
       _serial(() async {
         try {
+          onRequest?.call();
           final payload = await binary(
             target,
             reqTypeGetStatus,
@@ -158,6 +165,7 @@ class CliService {
   }) =>
       _serial(() async {
         try {
+          onRequest?.call();
           return await rawBinary!(target, reqType,
               data: data, timeout: timeout);
         } on RepeaterRequestException {

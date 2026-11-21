@@ -29,6 +29,44 @@ class AppSettingsScreen extends StatelessWidget {
             ),
           ),
         ),
+        const SectionHeader('Mesh economy'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Soft request warning',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Optional. Shows a reminder in the connection sheet '
+                    'after this many requests in one session. Nothing is '
+                    'blocked and the setting is not saved.',
+                    style: TextStyle(
+                        color: OtaTheme.textMuted, fontSize: 12, height: 1.3),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final option in [null, 25, 50, 100, 200])
+                        ChoiceChip(
+                          label: Text(option == null ? 'Off' : '$option'),
+                          selected: app.requestMeter.budget == option,
+                          onSelected: (_) => app.requestMeter.setBudget(option),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
         const SectionHeader('Local data'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),

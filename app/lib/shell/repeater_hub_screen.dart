@@ -97,12 +97,7 @@ class RepeaterHubScreen extends StatelessWidget {
                               ? 'Unknown'
                               : 'Repeater answered the update check'),
                     ),
-                    InfoRow(
-                      label: 'Access',
-                      value: app.nodeStatus == null
-                          ? 'Not signed in'
-                          : 'Signed in',
-                    ),
+                    InfoRow(label: 'Access', value: app.permissionLabel),
                   ],
                 ),
               ),
@@ -136,8 +131,15 @@ class RepeaterHubScreen extends StatelessWidget {
       BuildContext context, AppState app, RepeaterCapabilities? caps) {
     final fork = caps?.firmwareKind == FirmwareKind.fork;
     final confirmed = caps?.confidence == CapabilityConfidence.confirmed;
-    // Locked fork tiles open the firmware activity; stock management tiles
-    // open their own screen. Writes need at least a read-write session.
+    final forkReady = fork && confirmed;
+    final hasMqtt = caps?.mqtt ?? false;
+    final hasFleet = caps?.fleet ?? false;
+    final writeReason = app.canWrite ? '' : 'Sign in with write access';
+    // A locked fork tile opens the firmware activity; a tile locked by role
+    // shows why and is not tappable. Writes need a read-write session.
+    String forkReason(bool capabilityOk) => !capabilityOk
+        ? 'Update-enabled fork'
+        : (app.canWrite ? '' : 'Sign in with write access');
     final tiles = <(IconData, String, String, String, bool, String)>[
       (
         Icons.monitor_heart_outlined,
@@ -153,15 +155,15 @@ class RepeaterHubScreen extends StatelessWidget {
         'Read and change the repeater settings.',
         AppRoutes.settings,
         app.canWrite,
-        'Sign in with write access'
+        writeReason
       ),
       (
         Icons.manage_search,
         'Setting browser',
         'Read or change a key directly.',
         AppRoutes.browser,
-        true,
-        ''
+        app.canWrite,
+        writeReason
       ),
       (
         fleetIcon,
@@ -169,7 +171,7 @@ class RepeaterHubScreen extends StatelessWidget {
         'Who can talk to this repeater.',
         AppRoutes.acl,
         app.canWrite,
-        'Sign in with write access'
+        writeReason
       ),
       (
         Icons.hub_outlined,
@@ -192,64 +194,64 @@ class RepeaterHubScreen extends StatelessWidget {
         'Command line',
         'Run a raw command for anything without a dedicated screen.',
         AppRoutes.cli,
-        true,
-        ''
+        app.canWrite,
+        writeReason
       ),
       (
         Icons.filter_alt_outlined,
         'Filter',
         'Build and check packet rules before sending them.',
         AppRoutes.filter,
-        fork && confirmed,
-        'Update-enabled fork'
+        forkReady && app.canWrite,
+        forkReason(forkReady)
       ),
       (
         Icons.groups_outlined,
         'Fleet',
         'Send one job to a group of repeaters and collect replies.',
         AppRoutes.fleet,
-        fork && confirmed,
-        'Update-enabled fork'
+        forkReady && app.canWrite,
+        forkReason(forkReady)
       ),
       (
         Icons.cloud_outlined,
         'MQTT',
         'Configure the observer and two brokers.',
         AppRoutes.mqtt,
-        caps?.mqtt ?? false,
-        'Update-enabled fork'
+        hasMqtt && app.canWrite,
+        forkReason(hasMqtt)
       ),
       (
         Icons.wifi,
         'WiFi update',
         'Use the repeater’s built-in update page over your LAN.',
         AppRoutes.wifiOta,
-        true,
-        ''
+        app.canWrite,
+        writeReason
       ),
       (
         Icons.tune,
         'Fork features',
         'Radio2, battery gate, mesh clock, bot and power profile.',
         AppRoutes.extras,
-        fork && confirmed,
-        'Update-enabled fork'
+        forkReady && app.canWrite,
+        forkReason(forkReady)
       ),
       (
         Icons.build_outlined,
         'Operations',
         'Clock, adverts, logs, reboot and other one-shot actions.',
         AppRoutes.operations,
-        true,
-        ''
+        app.canWrite,
+        writeReason
       ),
       (
         Icons.monitor_outlined,
         'Diagnostics',
         'Region, sensors, GPS, bridge and board facts.',
         AppRoutes.diagnostics,
-        true,
-        ''
+        app.canWrite,
+        writeReason
       ),
       (
         Icons.history,
@@ -264,16 +266,16 @@ class RepeaterHubScreen extends StatelessWidget {
         'Node identity',
         'Change the repeater private key and migrate local data.',
         AppRoutes.identity,
-        app.canWrite,
-        'Sign in with write access'
+        app.isAdmin,
+        app.isAdmin ? '' : 'Sign in as admin'
       ),
       (
         Icons.content_paste_go,
         'Bulk settings',
         'Apply a safe setting to a tag-defined group of repeaters.',
         AppRoutes.bulkSettings,
-        caps?.fleet ?? false,
-        'Update-enabled fork'
+        hasFleet && app.canWrite,
+        forkReason(hasFleet)
       ),
     ];
     return [
@@ -326,7 +328,11 @@ class RepeaterHubScreen extends StatelessWidget {
           subtitle: unlocked ? body : '$body $reason.',
           locked: !unlocked,
           badge: unlocked ? 'Ready' : 'Locked',
-          onTap: () => Navigator.of(context).pushNamed(route),
+          onTap: unlocked
+              ? () => Navigator.of(context).pushNamed(route)
+              : reason == 'Update-enabled fork'
+                  ? () => Navigator.of(context).pushNamed(AppRoutes.update)
+                  : null,
         ),
     ];
   }

@@ -157,27 +157,34 @@ class ActivityTile extends StatelessWidget {
   final bool locked;
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: ListTile(
-          leading: Icon(locked ? Icons.lock_outline : icon,
-              color: locked ? OtaTheme.textMuted : OtaTheme.accent),
-          title: Text(title),
-          subtitle: Text(subtitle,
-              style: const TextStyle(
-                  color: OtaTheme.textMuted, fontSize: 12, height: 1.3)),
-          trailing: badge == null
-              ? const Icon(Icons.chevron_right, color: OtaTheme.textMuted)
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    StatusPill(badge!,
-                        color: locked ? OtaTheme.textMuted : OtaTheme.ok),
-                    const Icon(Icons.chevron_right,
-                        color: OtaTheme.textMuted, size: 18),
-                  ],
-                ),
-          onTap: onTap,
+  Widget build(BuildContext context) => Semantics(
+        button: true,
+        enabled: onTap != null,
+        label: locked ? '$title, locked. $subtitle' : '$title. $subtitle',
+        child: Card(
+          child: ExcludeSemantics(
+            child: ListTile(
+              leading: Icon(locked ? Icons.lock_outline : icon,
+                  color: locked ? OtaTheme.textMuted : OtaTheme.accent),
+              title: Text(title),
+              subtitle: Text(subtitle,
+                  style: const TextStyle(
+                      color: OtaTheme.textMuted, fontSize: 12, height: 1.3)),
+              trailing: badge == null
+                  ? const Icon(Icons.chevron_right, color: OtaTheme.textMuted)
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        StatusPill(badge!,
+                            color: locked ? OtaTheme.textMuted : OtaTheme.ok),
+                        const Icon(Icons.chevron_right,
+                            color: OtaTheme.textMuted, size: 18),
+                      ],
+                    ),
+              onTap: onTap,
+            ),
+          ),
         ),
       );
 }

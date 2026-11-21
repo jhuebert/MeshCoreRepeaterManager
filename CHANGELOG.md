@@ -8,6 +8,9 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ### Added
 
+- **Session request counter and permission-aware hub.** The connection sheet shows how many management exchanges this session used, with an opt-in soft budget warning in Settings. Hub tiles now reflect the login role: guests see only read-only activities, write-capable tiles show why they are locked, and changing the node identity requires admin. Locked fork tiles open the firmware update activity.
+- **Accessibility and a no-em-dash guard.** Activity tiles carry a single combined semantics label and the connection indicator has a tooltip. A test scans shipped source string literals and rejects an em dash in UI copy.
+
 - **Bulk settings across a fleet group.** Pick from a curated safe subset of settings, target tags already on the nodes (or everyone), choose one job or one job per setting, and preview the exact scripts and byte count before applying. There is no per-repeater login and no individual node picker; replies arrive as per-repeater ACKs and every job is written to the local audit log.
 - **Every command family now has a proper UI.** Operations covers clock, adverts, logs, reboot and power with confirmations; Diagnostics covers region, sensors, GPS, bridge keys and board facts; History shows the redacted audit log; and a guided identity screen changes the node key with a typed confirmation and migrates the local directory to the new key.
 - **All five smaller fork features now have controls.** One screen covers radio2 (with the enabled preset shown read only), the battery gate, the mesh clock, the bot and the CPU/RX power profile. Validation mirrors the firmware: resume above suspend, votes within slots, bounded tolerance, valid bot channels and the radio2 versus power-saving exclusion.
