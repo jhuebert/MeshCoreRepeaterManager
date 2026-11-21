@@ -67,6 +67,7 @@ void main() {
       AppRoutes.diagnostics,
       AppRoutes.audit,
       AppRoutes.identity,
+      AppRoutes.bulkSettings,
     ]) {
       expect(
           generateRoute(RouteSettings(name: name)), isA<MaterialPageRoute>());

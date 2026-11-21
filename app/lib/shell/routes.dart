@@ -10,6 +10,7 @@ import '../screens/management/filter_rule_editor_screen.dart';
 import '../screens/management/filter_screen.dart';
 import '../screens/management/fleet_screen.dart';
 import '../screens/management/audit_log_screen.dart';
+import '../screens/management/bulk_settings_screen.dart';
 import '../screens/management/diagnostics_screen.dart';
 import '../screens/management/fork_extras_screen.dart';
 import '../screens/management/identity_key_screen.dart';
@@ -42,6 +43,7 @@ class AppRoutes {
   static const diagnostics = '/diagnostics';
   static const audit = '/audit';
   static const identity = '/identity';
+  static const bulkSettings = '/bulk-settings';
 }
 
 Route<dynamic>? generateRoute(RouteSettings settings) =>
@@ -85,5 +87,7 @@ Route<dynamic>? generateRoute(RouteSettings settings) =>
           builder: (_) => const AuditLogScreen(), settings: settings),
       AppRoutes.identity => MaterialPageRoute(
           builder: (_) => const IdentityKeyScreen(), settings: settings),
+      AppRoutes.bulkSettings => MaterialPageRoute(
+          builder: (_) => const BulkSettingsScreen(), settings: settings),
       _ => null,
     };

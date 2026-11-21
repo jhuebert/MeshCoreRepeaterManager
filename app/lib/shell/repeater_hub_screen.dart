@@ -267,6 +267,14 @@ class RepeaterHubScreen extends StatelessWidget {
         app.canWrite,
         'Sign in with write access'
       ),
+      (
+        Icons.content_paste_go,
+        'Bulk settings',
+        'Apply a safe setting to a tag-defined group of repeaters.',
+        AppRoutes.bulkSettings,
+        caps?.fleet ?? false,
+        'Update-enabled fork'
+      ),
     ];
     return [
       Padding(

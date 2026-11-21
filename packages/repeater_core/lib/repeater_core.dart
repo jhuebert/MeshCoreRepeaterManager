@@ -5,6 +5,7 @@
 library;
 
 export 'src/binary_req.dart';
+export 'src/bulk_settings.dart';
 export 'src/capabilities.dart';
 export 'src/chart_sample.dart';
 export 'src/filter/dialect.dart';
