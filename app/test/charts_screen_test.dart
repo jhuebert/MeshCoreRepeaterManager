@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore_repeater_manager/app_state.dart';
 import 'package:meshcore_repeater_manager/screens/management/charts_screen.dart';
 import 'package:meshcore_repeater_manager/services/repeater_cache_store.dart';
-import 'package:repeater_core/repeater_core.dart';
 
 import 'support.dart';
 

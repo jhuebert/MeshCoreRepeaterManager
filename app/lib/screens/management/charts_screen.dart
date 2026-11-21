@@ -166,7 +166,8 @@ class _StatsChartsScreenState extends State<StatsChartsScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: last == null
-              ? const LastKnownLabelPlaceholder()
+              ? const Text('No reading yet',
+                  style: TextStyle(color: OtaTheme.textMuted, fontSize: 11))
               : LastKnownLabel(last, prefix: 'Last reading'),
         ),
         const SectionHeader('Samples'),
@@ -199,15 +200,4 @@ class _StatsChartsScreenState extends State<StatsChartsScreen> {
   static String _timeLabel(DateTime at) =>
       '${at.hour.toString().padLeft(2, '0')}:'
       '${at.minute.toString().padLeft(2, '0')}';
-}
-
-/// Shown when there is nothing on screen to date.
-class LastKnownLabelPlaceholder extends StatelessWidget {
-  const LastKnownLabelPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) => const Text(
-        'No reading yet',
-        style: TextStyle(color: OtaTheme.textMuted, fontSize: 11),
-      );
 }

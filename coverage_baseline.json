@@ -37,21 +37,25 @@
       "covered": 72,
       "total": 77
     },
+    "app/lib/screens/management/charts_screen.dart": {
+      "covered": 85,
+      "total": 90
+    },
     "app/lib/screens/management/cli_screen.dart": {
       "covered": 77,
       "total": 95
     },
     "app/lib/screens/management/neighbors_screen.dart": {
-      "covered": 69,
-      "total": 85
+      "covered": 72,
+      "total": 88
     },
     "app/lib/screens/management/settings_screen.dart": {
       "covered": 73,
       "total": 91
     },
     "app/lib/screens/management/status_screen.dart": {
-      "covered": 85,
-      "total": 90
+      "covered": 102,
+      "total": 102
     },
     "app/lib/screens/radio_settings_screen.dart": {
       "covered": 152,
@@ -118,8 +122,8 @@
       "total": 73
     },
     "app/lib/services/repeater_cache_store.dart": {
-      "covered": 75,
-      "total": 82
+      "covered": 70,
+      "total": 72
     },
     "app/lib/services/repeater_directory.dart": {
       "covered": 100,
@@ -136,6 +140,10 @@
     "app/lib/services/settings_controller.dart": {
       "covered": 48,
       "total": 50
+    },
+    "app/lib/services/stats_recorder.dart": {
+      "covered": 6,
+      "total": 6
     },
     "app/lib/services/temp_radio_renewal.dart": {
       "covered": 15,
@@ -170,12 +178,16 @@
       "total": 40
     },
     "app/lib/shell/routes.dart": {
-      "covered": 18,
-      "total": 18
+      "covered": 20,
+      "total": 20
     },
     "app/lib/theme.dart": {
       "covered": 6,
       "total": 6
+    },
+    "app/lib/widgets/charts/metric_chart.dart": {
+      "covered": 45,
+      "total": 45
     },
     "app/lib/widgets/common.dart": {
       "covered": 67,
@@ -328,6 +340,10 @@
     "packages/repeater_core/lib/src/capabilities.dart": {
       "covered": 110,
       "total": 126
+    },
+    "packages/repeater_core/lib/src/chart_sample.dart": {
+      "covered": 37,
+      "total": 38
     },
     "packages/repeater_core/lib/src/cli_reply.dart": {
       "covered": 13,

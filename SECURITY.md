@@ -80,9 +80,11 @@ code with no new guarantee at the arm/SHA/apply gates.
 Repeater management adds three kinds of local data, all on the device only:
 
 - **Settings and status cache** (`repeaters/<id>/cache.json`) holds last-known
-  values with their fetch time and source. It never holds the admin password,
-  guest password, private keys, fleet PSK or MQTT credentials. MQTT secrets are
-  write-only and excluded from reads, cache and diagnostics.
+  values with their fetch time and source, plus bounded chart samples of
+  non-secret counters (battery, traffic, airtime, uptime, errors and neighbour
+  counts). It never holds the admin password, guest password, private keys,
+  fleet PSK or MQTT credentials. MQTT secrets are write-only and excluded from
+  reads, cache and diagnostics.
 - **Management audit log** (`management_audit.json`) records writes only: the
   command family, the command text with credential values redacted, the reply
   classification and the outcome. A lost reply is recorded as unknown, never

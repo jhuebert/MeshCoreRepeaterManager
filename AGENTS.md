@@ -38,8 +38,10 @@ accurate.
   connection indicator/sheet and the repeater picker; `lib/controllers/` owns
   the connection lifecycle shared by every screen.
 - `app/test/` — widget and pure-Dart app tests. `support.dart` has the shared
-  fixtures (`FakeLibrary`, `Catalog`, `OtaStatus`/`OtaNodeInfo`); use it for
-  every screen test instead of touching platform plugins.
+  fixtures (`FakeLibrary`, `Catalog`, `OtaStatus`/`OtaNodeInfo`, `fakeCli`); use
+  it for every screen test instead of touching platform plugins. In-memory
+  cache stores (`persist: false`) keep widget tests out of the fake-async I/O
+  zone.
 - `packages/ota_core/` — the wire contract (op frames, CRC), the frozen `ota
   status` CLI-line parser, `OP_INFO` parsing, the delta engine (rolling-hash
   matcher), and the windowed transfer engine (REQ/RESPONSE, op retry from
@@ -51,8 +53,8 @@ accurate.
 - `packages/companion_client/` — contacts, login, `remoteCli`, message pump.
 - `packages/repeater_core/` — pure-Dart management domain: CLI reply taxonomy,
   read-only capability detection, binary report codecs (status, ACL,
-  neighbours, owner info), the settings registry and tagged binary REQ client.
-  Original work, MIT.
+  neighbours, owner info), the settings registry, chart sample metrics and the
+  tagged binary REQ client. Original work, MIT.
 - `packages/test_support/` — dev-only framed TCP client and test plumbing
   (MeshChameleon subtree).
 - `bench/` — hardware harness (never run in CI):

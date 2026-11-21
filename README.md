@@ -63,9 +63,14 @@ line. Stock repeaters work here too: the hub only locks features the node has
 not confirmed through read-only checks.
 
 A value marked "last known" came from the local cache; opening a screen never
-sends mesh traffic, and each section asks for its own refresh. Management
-writes are recorded locally with secrets removed. Firmware updates invalidate
-that repeater's cached facts. The access list screen asks for extra
+sends mesh traffic, and each section asks for its own refresh. Status and
+neighbour refreshes save timestamped readings, which the **Statistics** screen
+turns into battery, traffic and uptime trends. Charts are drawn from those
+saved readings, so opening the screen costs no airtime. Automatic refresh is
+off by default and stops after a bounded number of attempts.
+
+Management writes are recorded locally with secrets removed. Firmware updates
+invalidate that repeater's cached facts. The access list screen asks for extra
 confirmation before lowering the companion's own access, so you cannot lock
 yourself out by accident.
 

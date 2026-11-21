@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:repeater_core/repeater_core.dart';
 import 'package:test/test.dart';
 

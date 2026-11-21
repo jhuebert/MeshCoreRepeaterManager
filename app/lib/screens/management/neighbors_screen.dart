@@ -34,8 +34,9 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
   String? _problem;
 
   Future<void> _load({bool reset = false}) async {
-    final cli = widget.cli ?? context.read<AppState>().managementCli();
-    final target = context.read<AppState>().target;
+    final app = context.read<AppState>();
+    final cli = widget.cli ?? app.managementCli();
+    final target = app.target;
     if (cli == null || target == null) return;
     if (reset) _offset = 0;
     setState(() {
@@ -49,6 +50,7 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
       order: _order,
       prefixLength: _prefixLength,
     );
+    final cache = widget.cache ?? app.cacheForTarget();
     if (!mounted) return;
     setState(() {
       _busy = false;
@@ -57,8 +59,6 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
         return;
       }
       _total = page.total;
-      final cache = widget.cache ?? context.read<AppState>().cacheForTarget();
-      if (cache != null) StatsRecorder(cache).recordNeighbourCount(page.total);
       if (reset) {
         _entries
           ..clear()
@@ -68,6 +68,9 @@ class _NeighborsScreenState extends State<NeighborsScreen> {
       }
       _offset += page.entries.length;
     });
+    if (cache != null && page != null) {
+      await StatsRecorder(cache).recordNeighbourCount(page.total);
+    }
   }
 
   Future<void> _action(String command) async {
