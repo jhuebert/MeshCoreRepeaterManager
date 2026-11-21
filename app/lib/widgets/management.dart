@@ -62,7 +62,11 @@ class ManagementScaffold extends StatelessWidget {
               color: OtaTheme.surface,
               child: SafeArea(
                 minimum: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                child: bar,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [bar],
+                ),
               ),
             ),
     );

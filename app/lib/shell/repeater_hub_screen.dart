@@ -199,7 +199,7 @@ class RepeaterHubScreen extends StatelessWidget {
         Icons.filter_alt_outlined,
         'Filter',
         'Build and check packet rules before sending them.',
-        AppRoutes.update,
+        AppRoutes.filter,
         fork && confirmed,
         'Update-enabled fork'
       ),

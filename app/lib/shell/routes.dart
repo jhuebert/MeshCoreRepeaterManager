@@ -6,6 +6,8 @@ import '../screens/management/acl_screen.dart';
 import '../screens/management/browser_screen.dart';
 import '../screens/management/charts_screen.dart';
 import '../screens/management/cli_screen.dart';
+import '../screens/management/filter_rule_editor_screen.dart';
+import '../screens/management/filter_screen.dart';
 import '../screens/management/neighbors_screen.dart';
 import '../screens/management/settings_screen.dart';
 import '../screens/management/status_screen.dart';
@@ -22,6 +24,8 @@ class AppRoutes {
   static const acl = '/acl';
   static const neighbors = '/neighbors';
   static const stats = '/stats';
+  static const filter = '/filter';
+  static const filterEditor = '/filter-editor';
 }
 
 Route<dynamic>? generateRoute(RouteSettings settings) =>
@@ -45,5 +49,9 @@ Route<dynamic>? generateRoute(RouteSettings settings) =>
           builder: (_) => const NeighborsScreen(), settings: settings),
       AppRoutes.stats => MaterialPageRoute(
           builder: (_) => const StatsChartsScreen(), settings: settings),
+      AppRoutes.filter => MaterialPageRoute(
+          builder: (_) => const FilterScreen(), settings: settings),
+      AppRoutes.filterEditor => MaterialPageRoute(
+          builder: (_) => const FilterRuleEditorScreen(), settings: settings),
       _ => null,
     };
