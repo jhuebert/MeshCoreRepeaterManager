@@ -40,7 +40,9 @@ ProbeVerdict classifyProbe(String probe, String reply) {
   }
   final positive = switch (probe) {
     'ota status' => lower.contains('running=') && lower.contains('sha='),
-    'filter' => lower.contains('usage') || lower.contains('on|off'),
+    // The fork answers bare `filter` with its status line, not usage text.
+    'filter' => lower.contains('usage') ||
+        (lower.contains('rules ') && lower.contains('chans ')),
     'fleet' => lower.contains('usage') || lower.contains('chan'),
     'radio2 status' => lower.startsWith('on') ||
         lower.startsWith('off') ||
@@ -52,7 +54,10 @@ ProbeVerdict classifyProbe(String probe, String reply) {
         lower.startsWith('on') ||
         lower.startsWith('off'),
     'bot' => lower.startsWith('bot'),
-    'get cpu.freq' => lower.contains('mhz') || lower.contains('default'),
+    // The reply is a bare value such as `> 80`, with no unit word.
+    'get cpu.freq' => lower.contains('mhz') ||
+        lower.contains('default') ||
+        RegExp(r'^>\s*\d+').hasMatch(text),
     'get radio.rxps' =>
       lower.contains('desired') || lower.contains('effective'),
     _ => false,

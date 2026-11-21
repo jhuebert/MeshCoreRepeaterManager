@@ -28,6 +28,51 @@ void main() {
     });
   });
 
+  group('captured fork firmware replies', () {
+    const replies = <String, String>{
+      'ota status': 'running=v1.18.0-ota2 sha=aabbccdd state=idle',
+      'filter':
+          'on; rules 0/32; chans 1/32; ratelimit advert 0h; cache 0/512; limiter 0; aborted 0',
+      'fleet':
+          'off, chan -, tags 0/8; scripts ran:0 dup:0 noid:0 refused:0; pending 0/2; sched 0/2; seen 0/32; ackq 0/2 await 0 rtx 0; badline 0; crowded 0',
+      'radio2 status': 'off; preset=913.225,62.5,7,8',
+      'get mqtt.status':
+          'mqtt wifi:down time:ok slots:0/0 rx:3851 pub:0 drop:0 q:0/8 heap:249584/229364',
+      'battery': 'batt 0mV; gate off; drops 0',
+      'clock mesh': 'off slots=33/22 tol=60/60 now=2026-03-03T21:07:58Z',
+      'bot': 'bot: off, name (node), chan (none)',
+      'get cpu.freq': '> 80',
+      'get radio.rxps':
+          '> desired=off,effective=continuous,supported=yes,err=0,fail=0,level=8,catch=8.2,preamble=0,rx=4063,sleep=6085',
+    };
+
+    test('every probe is recognised as fork positive', () {
+      for (final entry in replies.entries) {
+        expect(classifyProbe(entry.key, entry.value), ProbeVerdict.forkPositive,
+            reason: '${entry.key} => ${entry.value}');
+      }
+    });
+
+    test('the full probe set identifies every fork feature', () {
+      final caps = detectCapabilities(replies: replies, otaConfirmed: true);
+      expect(caps.firmwareKind, FirmwareKind.fork);
+      expect(caps.confidence, CapabilityConfidence.confirmed);
+      for (final feature in [
+        'ota',
+        'filter',
+        'fleet',
+        'mqtt',
+        'radio2',
+        'batteryGate',
+        'meshClock',
+        'bot',
+        'powerProfile',
+      ]) {
+        expect(caps.supports(feature), isTrue, reason: feature);
+      }
+    });
+  });
+
   group('detectCapabilities', () {
     test('an unanswered probe set leaves everything unknown', () {
       final c = detectCapabilities(replies: {

@@ -198,6 +198,18 @@ void main() {
       expect(parseRuleLine('not a rule'), isNull);
     });
 
+    test('captured firmware status line parses', () {
+      final status = FilterStatus.parse(
+          'on; rules 0/32; chans 1/32; ratelimit advert 0h; '
+          'cache 0/512; limiter 0; aborted 0')!;
+      expect(status.on, isTrue);
+      expect(status.rules, 0);
+      expect(status.maxRules, 32);
+      expect(status.channels, 1);
+      expect(status.cacheUsed, 0);
+      expect(status.maxCache, 512);
+    });
+
     test('status and stats lines parse', () {
       final status =
           FilterStatus.parse('on; rules 1/32; chans 2/32; ratelimit advert 0h; '
