@@ -219,6 +219,14 @@ class RepeaterHubScreen extends StatelessWidget {
         caps?.mqtt ?? false,
         'Update-enabled fork'
       ),
+      (
+        Icons.wifi,
+        'WiFi update',
+        'Use the repeater’s built-in update page over your LAN.',
+        AppRoutes.wifiOta,
+        true,
+        ''
+      ),
     ];
     return [
       Padding(

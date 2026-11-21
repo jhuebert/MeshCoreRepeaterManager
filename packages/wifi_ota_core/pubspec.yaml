@@ -1,0 +1,17 @@
+name: wifi_ota_core
+description: >-
+  Pure-Dart client for the stock AsyncElegantOTA web endpoint. Injectable HTTP
+  client, MD5 helper and response parser; no Flutter or platform imports.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  crypto: ^3.0.3
+  http: ^1.2.2
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^6.0.0

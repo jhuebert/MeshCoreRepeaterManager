@@ -21,7 +21,7 @@ case "${1:-}" in
 esac
 
 echo "== pub get =="
-for pkg in mesh_protocol device_link test_support companion_client ota_core repeater_core; do
+for pkg in mesh_protocol device_link test_support companion_client ota_core repeater_core wifi_ota_core; do
   (cd "packages/$pkg" && "$DART" pub get >/dev/null)
 done
 # Formatting uses the language version from .dart_tool/package_config.json;
@@ -36,7 +36,7 @@ echo "== format =="
 "$DART" format --output=none --set-exit-if-changed \
   packages app/lib app/test app/integration_test tool bench
 
-for pkg in mesh_protocol device_link test_support companion_client ota_core repeater_core; do
+for pkg in mesh_protocol device_link test_support companion_client ota_core repeater_core wifi_ota_core; do
   echo "== packages/$pkg =="
   (
     cd "packages/$pkg"

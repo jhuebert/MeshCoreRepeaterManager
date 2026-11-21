@@ -823,6 +823,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.0"
+  wifi_ota_core:
+    dependency: "direct main"
+    description:
+      path: "../packages/wifi_ota_core"
+      relative: true
+    source: path
+    version: "0.1.0"
   xdg_directories:
     dependency: transitive
     description:

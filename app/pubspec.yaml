@@ -32,6 +32,8 @@ dependencies:
     path: ../packages/ota_core
   repeater_core:
     path: ../packages/repeater_core
+  wifi_ota_core:
+    path: ../packages/wifi_ota_core
   file_selector: ^1.1.0
   fl_chart: ^1.3.1
 
