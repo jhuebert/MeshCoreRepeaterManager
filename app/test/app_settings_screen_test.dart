@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore_repeater_manager/app_state.dart';
 import 'package:meshcore_repeater_manager/screens/app_settings_screen.dart';
