@@ -8,6 +8,8 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ### Added
 
+- **Filter rule backup and restore.** The filter screen exports the current rules as schema-versioned JSON or as ready to paste `filter add` commands. Import validates the whole set before anything is sent, reports the reason for a bad rule, and sends the exact commands after validation. The audit log can now be filtered by time range, family, outcome and repeater, and its export always covers the whole log.
+
 - **A global repeater route control.** The hub and every management screen open the same routing sheet. It replaces the OTA-only path field: zero hop, direct or explicit hops are validated and pushed to the companion's saved contact path, so settings, status, CLI and updates all use the same route. The hub identity card shows the active route.
 
 - **SoftAP join for WiFi updates.** If the update page is unreachable after `start ota`, the app tries to join `MeshCore-OTA` through the desktop OS tooling, reconnects the companion, and retries the identity read. Where the OS refuses or has no supported path, a manual-join screen explains what to do and a Continue button retries. No network change is attempted on mobile.

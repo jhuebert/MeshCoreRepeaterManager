@@ -112,7 +112,73 @@ void main() {
         outcome: AuditOutcome.ok);
     await _pump(tester, const AuditLogScreen(), app);
     expect(find.textContaining('[redacted]'), findsWidgets);
-    expect(find.text('Copy history'), findsOneWidget);
+    expect(find.text('Copy all history'), findsOneWidget);
+  });
+
+  testWidgets('audit history filters by outcome', (tester) async {
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final dir = Directory.systemTemp.createTempSync('audit_filter_test');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final app = _app();
+    app.auditStore =
+        ManagementAuditStore(File('${dir.path}/audit.json'), persist: false);
+    await app.auditStore!.load();
+    await app.auditStore!.record('set name Roof',
+        repeaterKeyHex: 'aa',
+        family: 'settings',
+        replyKind: 'ok',
+        outcome: AuditOutcome.ok);
+    await app.auditStore!.record('setperm bb 3',
+        repeaterKeyHex: 'bb',
+        family: 'access',
+        replyKind: 'error',
+        outcome: AuditOutcome.error);
+
+    await app.auditStore!.record(
+      'set name Old',
+      at: DateTime.now().subtract(const Duration(days: 30)),
+      repeaterKeyHex: 'aa',
+      family: 'settings',
+      replyKind: 'ok',
+      outcome: AuditOutcome.ok,
+    );
+
+    await _pump(tester, const AuditLogScreen(), app);
+    expect(find.text('3 of 3 entries'), findsOneWidget);
+    await tester.tap(find.text('Copy all history'));
+    await tester.pump();
+
+    await tester.tap(find.text('All time').first);
+    await tester.pump();
+    await tester.tap(find.text('Last 7 days').last);
+    await tester.pump();
+    expect(find.text('2 of 3 entries'), findsOneWidget);
+
+    await tester.tap(find.text('All families').first);
+    await tester.pump();
+    await tester.tap(find.text('access').last);
+    await tester.pump();
+    expect(find.text('1 of 3 entries'), findsOneWidget);
+
+    await tester.tap(find.text('All repeaters').first);
+    await tester.pump();
+    await tester.tap(find.text('bb').last);
+    await tester.pump();
+    expect(find.text('1 of 3 entries'), findsOneWidget);
+
+    await tester.tap(find.text('All outcomes').first);
+    await tester.pump();
+    await tester.tap(find.text('error').last);
+    await tester.pump();
+    expect(find.text('1 of 3 entries'), findsOneWidget);
+    expect(find.text('setperm bb 3'), findsOneWidget);
+    expect(find.text('set name Roof'), findsNothing);
+
+    await tester.tap(find.text('Clear filters'));
+    await tester.pump();
+    expect(find.text('3 of 3 entries'), findsOneWidget);
   });
 
   testWidgets('identity change needs a typed confirmation', (tester) async {

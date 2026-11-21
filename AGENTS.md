@@ -63,7 +63,8 @@ accurate.
 - `packages/repeater_core/` — pure-Dart management domain: CLI reply taxonomy,
   read-only capability detection, binary report codecs (status, ACL,
   neighbours, owner info), the settings registry, chart sample metrics, the
-  filter dialect/translator/rule codecs, the fleet script/ACK codecs, the MQTT
+  filter dialect/translator/rule codecs with rule-set export/import, the fleet
+  script/ACK codecs, the MQTT
   key registry/status parsers, the fork-extras codecs, the bulk-settings
   registry and the tagged binary REQ client. Original work, MIT. The filter dialect mirrors the
   fork's `PatternMatch` and `TinyRegex`; keep it table-driven and re-check the

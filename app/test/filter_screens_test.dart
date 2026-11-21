@@ -141,6 +141,95 @@ void main() {
     expect(commands.length, before);
   });
 
+  testWidgets('rules can be exported and imported with validation',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final commands = <String>[];
+    await _pump(
+        tester, FilterScreen(cli: _filterCli(commands)), _filterCli(commands));
+
+    await tester.tap(find.byIcon(Icons.file_download));
+    await tester.pump();
+    expect(find.text('Exported rules'), findsOneWidget);
+    expect(find.textContaining('"schema": 1'), findsWidgets);
+    await tester.tap(find.text('Copy'));
+    await tester.pump();
+    await tester.tap(find.text('Close'));
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.file_upload));
+    await tester.pump();
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.file_upload));
+    await tester.pump();
+    await tester.enterText(find.byKey(const Key('filter-import')), 'not json');
+    await tester.pump();
+    await tester.tap(find.text('Import'));
+    await tester.pump();
+    expect(
+        find.textContaining('Use a rule set exported as JSON'), findsWidgets);
+
+    await tester.enterText(
+      find.byKey(const Key('filter-import')),
+      '{"schema":1,"rules":[{"action":"drop","channels":["#x"]}]}',
+    );
+    await tester.pump();
+    await tester.tap(find.text('Import'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(commands, contains('filter add chan=#x'));
+
+    // The editor and statistics buttons use the same shared navigation.
+    await tester.tap(find.text('Add rule'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('New filter rule'), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.bar_chart));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Filter statistics'), findsOneWidget);
+  });
+
+  testWidgets('an import with a refused write reports the firmware error',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final cli = CliService(
+      exchange: (_, command, {timeout = const Duration(seconds: 45)}) async {
+        if (command == 'filter') {
+          return 'on; rules 0/32; chans 0/32; ratelimit advert 0h; cache 0/512; limiter 0; aborted 0';
+        }
+        if (command.startsWith('filter add')) return 'Err - rule rejected';
+        return '> ok';
+      },
+      binary: (_, __,
+              {data = const [],
+              required exactLength,
+              timeout = const Duration(seconds: 10)}) async =>
+          throw const RepeaterRequestException('not used'),
+    );
+    await _pump(tester, FilterScreen(cli: cli), cli);
+    await tester.tap(find.byIcon(Icons.file_upload));
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('filter-import')),
+      '{"schema":1,"rules":[{"action":"drop","channels":["#y"]}]}',
+    );
+    await tester.pump();
+    await tester.tap(find.text('Import'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.textContaining('rule rejected'), findsWidgets);
+  });
+
   testWidgets('filter statistics screen shows totals', (tester) async {
     final commands = <String>[];
     await _pump(tester, FilterStatsScreen(cli: _filterCli(commands)),

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:repeater_core/repeater_core.dart';
 import 'package:test/test.dart';
 
@@ -208,6 +210,59 @@ void main() {
       expect(status.channels, 1);
       expect(status.cacheUsed, 0);
       expect(status.maxCache, 512);
+    });
+
+    test('rule sets roundtrip through export and import', () {
+      final rules = [
+        const FilterRule(index: 0, channels: ['#test'], sender: r'^bob$'),
+        const FilterRule(index: 1, action: 'forward', types: ['advert']),
+      ];
+      final json = exportFilterRules(rules);
+      expect(json, contains('"schema": 1'));
+      final imported = importFilterRules(json);
+      expect(imported, hasLength(2));
+      expect(imported[0].sender, r'^bob$');
+      expect(imported[1].action, 'forward');
+      expect(exportFilterRulesAsCommands(rules),
+          contains(r'filter add chan=#test sender=^bob$'));
+    });
+
+    test('import rejects broken or unsafe rule sets', () {
+      expect(
+          () => importFilterRules('not json'), throwsA(isA<ArgumentError>()));
+      expect(() => importFilterRules('{"schema": 9, "rules": []}'),
+          throwsA(isA<ArgumentError>()));
+      expect(() => importFilterRules('{"schema": 1, "rules": []}'),
+          throwsA(isA<ArgumentError>()));
+      expect(
+          () => importFilterRules(
+              '{"schema": 1, "rules": [{"action": "erase"}]}'),
+          throwsA(isA<ArgumentError>()));
+      expect(
+          () =>
+              importFilterRules('{"schema": 1, "rules": [{"sender": "A||B"}]}'),
+          throwsA(isA<ArgumentError>()));
+    });
+
+    test('summary and oversized or malformed imports', () {
+      expect(const FilterRule(channels: ['#a']).summary, contains('chan=#a'));
+      expect(const FilterRule(enabled: false).summary, contains('disabled'));
+      expect(
+        () => importFilterRules(jsonEncode({
+          'schema': 1,
+          'rules': List.filled(33, {'action': 'drop'}),
+        })),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(
+        () => importFilterRules(jsonEncode({
+          'schema': 1,
+          'rules': [
+            {'text': 'A||B'}
+          ],
+        })),
+        throwsA(isA<ArgumentError>()),
+      );
     });
 
     test('status and stats lines parse', () {

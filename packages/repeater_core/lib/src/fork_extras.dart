@@ -76,8 +76,9 @@ class MeshClockStatus {
   }
 
   static String? validateTolerance(int tolerance, int min) {
-    if (tolerance < 1 || tolerance > 65535)
+    if (tolerance < 1 || tolerance > 65535) {
       return 'Tolerance must be 1 to 65535';
+    }
     if (min < 0 || min > 65535) return 'Minimum must be 0 to 65535';
     return null;
   }

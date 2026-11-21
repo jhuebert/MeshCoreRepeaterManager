@@ -1,5 +1,9 @@
 // Filter rule model and the CLI text contract from FILTER.md.
 
+import 'dart:convert';
+
+import 'dialect.dart';
+
 class FilterRule {
   const FilterRule({
     this.index = 0,
@@ -305,6 +309,74 @@ FilterRulePage parseFilterList(String reply) {
     if (rule != null) rules.add(rule);
   }
   return FilterRulePage(rules, next);
+}
+
+/// Export a rule set as JSON with a schema marker. No secrets are involved.
+String exportFilterRules(List<FilterRule> rules) =>
+    const JsonEncoder.withIndent('  ').convert({
+      'schema': 1,
+      'exportedAt': DateTime.now().toUtc().toIso8601String(),
+      'rules': rules.map((r) => r.toJson()).toList(),
+    });
+
+/// Export the same rule set as the exact `filter add` commands, one per line.
+String exportFilterRulesAsCommands(List<FilterRule> rules) =>
+    rules.map(ruleToAddCommand).join('\n');
+
+/// Parse and validate an imported rule set. Returns the rules in listed order.
+/// Throws [ArgumentError] with a user-facing reason instead of trusting input.
+List<FilterRule> importFilterRules(String text) {
+  Map<String, dynamic> decoded;
+  try {
+    final value = jsonDecode(text);
+    if (value is! Map) throw const FormatException('not an object');
+    decoded = Map<String, dynamic>.from(value);
+  } on FormatException {
+    throw ArgumentError('Use a rule set exported as JSON.');
+  }
+  final schema = decoded['schema'];
+  if (schema is! int || schema > 1) {
+    throw ArgumentError('Unsupported rule set version.');
+  }
+  final raw = decoded['rules'];
+  if (raw is! List || raw.isEmpty) {
+    throw ArgumentError('The rule set has no rules.');
+  }
+  if (raw.length > 32) {
+    throw ArgumentError('The firmware accepts at most 32 rules.');
+  }
+  final rules = <FilterRule>[];
+  for (final entry in raw) {
+    if (entry is! Map) throw ArgumentError('A rule was not an object.');
+    final rule = FilterRule.fromJson(Map<String, dynamic>.from(entry));
+    final error = _validateImportedRule(rule);
+    if (error != null) throw ArgumentError('Rule ${rule.index}: $error');
+    rules.add(rule.copyWith(index: rules.length));
+  }
+  return rules;
+}
+
+String? _validateImportedRule(FilterRule rule) {
+  if (rule.action != 'drop' && rule.action != 'forward') {
+    return 'Unknown action ${rule.action}';
+  }
+  if ((rule.sender ?? '').isNotEmpty) {
+    for (final issue in validatePattern(rule.sender!, sender: true)) {
+      return issue.message;
+    }
+  }
+  if ((rule.text ?? '').isNotEmpty) {
+    for (final issue in validatePattern(rule.text!, sender: false)) {
+      return issue.message;
+    }
+  }
+  if (rule.prob != null && (rule.prob! < 1 || rule.prob! > 100)) {
+    return 'Match percent must be 1 to 100';
+  }
+  if (rule.throttle != null && (rule.throttle! < 1 || rule.throttle! > 65535)) {
+    return 'Throttle must be 1 to 65535 seconds';
+  }
+  return null;
 }
 
 class FilterStatus {

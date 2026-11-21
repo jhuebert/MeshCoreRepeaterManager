@@ -81,6 +81,9 @@ messages reach the repeater. Zero hop, direct and explicit hop paths are
 validated and saved on the companion, so all management and the firmware
 update use one route.
 
+The history screen filters writes by time, family, outcome and repeater;
+copying the log always includes every entry.
+
 **Operations** holds one-shot maintenance actions, **Diagnostics** covers
 region, sensors, GPS, bridge keys and board facts, and **History** shows the
 local record of management writes. Changing the node identity asks for a typed
@@ -113,7 +116,7 @@ On a repeater with the filter feature, the **Filter** screen reads every rule
 page, controls the master switch and rate limit, and asks before deleting
 anything. Its rule editor checks patterns against the firmware's smaller regex
 dialect, can translate a common regex with a warning for every change, and
-dry-runs sample packets before showing the exact command.
+dry-runs sample packets before showing the exact command. Rules can be exported as JSON and imported back with validation before anything is sent.
 
 Management writes are recorded locally with secrets removed. Firmware updates
 invalidate that repeater's cached facts. The access list screen asks for extra

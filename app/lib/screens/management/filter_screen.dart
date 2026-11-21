@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:repeater_core/repeater_core.dart';
 
@@ -112,6 +113,118 @@ class _FilterScreenState extends State<FilterScreen> {
     if (result == true) await _refresh();
   }
 
+  Future<void> _exportRules() async {
+    final service = _service();
+    if (service == null) return;
+    final rules = _rules.isEmpty ? await service.allRules() : _rules;
+    final text = exportFilterRules(rules);
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exported rules'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SelectableText(text,
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Clipboard.setData(ClipboardData(text: text)),
+            child: const Text('Copy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _importRules() async {
+    final service = _service();
+    if (service == null) return;
+    final controller = TextEditingController();
+    String? error;
+    List<FilterRule>? imported;
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => StatefulBuilder(
+            builder: (context, setState) => AlertDialog(
+              title: const Text('Import rules'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      key: const Key('filter-import'),
+                      controller: controller,
+                      maxLines: 8,
+                      autocorrect: false,
+                      decoration: const InputDecoration(
+                        labelText: 'Paste a rule set exported as JSON',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    if (error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(error!,
+                            style: const TextStyle(color: OtaTheme.bad)),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Cancel')),
+                TextButton(
+                  onPressed: () {
+                    try {
+                      imported = importFilterRules(controller.text);
+                      Navigator.of(context).pop(true);
+                    } on ArgumentError catch (e) {
+                      setState(() => error = e.message.toString());
+                    }
+                  },
+                  child: const Text('Import'),
+                ),
+              ],
+            ),
+          ),
+        ) ??
+        false;
+    controller.dispose();
+    if (confirmed && imported != null) {
+      await _applyImportedRules(service, imported!);
+    }
+  }
+
+  Future<void> _applyImportedRules(
+      FilterService service, List<FilterRule> rules) async {
+    setState(() => _busy = true);
+    for (final rule in rules) {
+      if (!mounted) return;
+      final reply = await service.write(ruleToAddCommand(rule));
+      if (!reply.ok) {
+        if (mounted) {
+          setState(() {
+            _busy = false;
+            _problem = reply.kind == CliReplyKind.unknown
+                ? 'No answer. Outcome unknown; check the rules before retrying.'
+                : reply.text;
+          });
+        }
+        return;
+      }
+    }
+    if (mounted) setState(() => _busy = false);
+    await _refresh();
+  }
+
   Future<void> _deleteRule(FilterRule rule) async {
     final ok = await showDialog<bool>(
           context: context,
@@ -140,6 +253,16 @@ class _FilterScreenState extends State<FilterScreen> {
       onRefresh: _refresh,
       refreshing: _busy,
       actions: [
+        IconButton(
+          onPressed: _busy ? null : _exportRules,
+          icon: const Icon(Icons.file_download),
+          tooltip: 'Export rules',
+        ),
+        IconButton(
+          onPressed: _busy ? null : _importRules,
+          icon: const Icon(Icons.file_upload),
+          tooltip: 'Import rules',
+        ),
         IconButton(
           onPressed: () => Navigator.of(context).push(
             MaterialPageRoute(
