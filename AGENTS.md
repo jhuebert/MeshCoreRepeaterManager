@@ -50,8 +50,9 @@ accurate.
   binary requests (MeshChameleon subtree).
 - `packages/companion_client/` — contacts, login, `remoteCli`, message pump.
 - `packages/repeater_core/` — pure-Dart management domain: CLI reply taxonomy,
-  read-only capability detection, the 56-byte binary status report, the
-  settings registry and tagged binary REQ client. Original work, MIT.
+  read-only capability detection, binary report codecs (status, ACL,
+  neighbours, owner info), the settings registry and tagged binary REQ client.
+  Original work, MIT.
 - `packages/test_support/` — dev-only framed TCP client and test plumbing
   (MeshChameleon subtree).
 - `bench/` — hardware harness (never run in CI):

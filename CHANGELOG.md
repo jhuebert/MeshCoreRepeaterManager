@@ -8,6 +8,10 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ### Added
 
+- **Stock repeaters can now be inspected and configured from the hub.** Status comes from one binary status request; settings use curated sections with per-section refresh, draft tracking and batch save. A generic browser and a raw command line cover everything else, with confirmations for state-changing commands and a clear "unknown" when a reply is lost.
+- **Access list and neighbours have their own screens.** The ACL is read with a binary request, shows the companion's own entry and asks again before lowering it. Neighbours are paged with an explicit next action and a sort choice, with no silent truncation.
+- **Firmware reports are read from the binary REQ path.** The ACL, neighbour, owner-info and status codecs live in `repeater_core` and are validated against the stock repeater's reply layouts.
+
 - **A Repeater Hub is now the app's home.** The companion connection is a global indicator in the top bar with a connection sheet, so navigating never drops the link. Firmware updates are a dedicated activity that keeps the same eight steps. The hub shows the selected repeater, its firmware and detected capabilities; fork-only activities stay locked until read-only probes confirm them.
 - **Repeater facts are cached locally and labelled last known.** Opening a screen sends no mesh traffic; each section asks for its own refresh. A verified apply or rollback invalidates that repeater's settings and capabilities, and the next open re-identifies the node.
 - **Management writes go to a local audit log.** Commands, reply classifications and outcomes are stored with secrets removed, keeping the most recent 1000 entries. Reads and refreshes are not recorded.

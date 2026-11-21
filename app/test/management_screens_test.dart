@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
 import 'package:meshcore_repeater_manager/app_state.dart';
 import 'package:meshcore_repeater_manager/screens/management/acl_screen.dart';
 import 'package:meshcore_repeater_manager/screens/management/browser_screen.dart';

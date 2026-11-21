@@ -90,6 +90,12 @@ Repeater management adds three kinds of local data, all on the device only:
 - **Capability probes** are strictly read-only. An unanswered probe means "not
   confirmed", not "unsupported", and nothing is inferred from a single reply
   without the full probe set agreeing.
+- **Management writes** always carry an explicit outcome. A reply that never
+  arrived is recorded and shown as unknown, never as success; settings changes
+  are re-read before the app claims they landed. The access-list screen asks a
+  second time before lowering or removing the companion's own entry, and the
+  raw command line refuses serial-only or destructive commands such as
+  `get prv.key` and `erase` outright.
 
 The settings file, audit log and repeater index are schema-versioned. A file
 from a newer schema is reported, not overwritten, and migrations keep the

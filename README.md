@@ -57,11 +57,17 @@ whether a companion is connected; tap it for connection details and controls.
 The connection survives navigation, so switching screens never drops the link.
 
 Pick a repeater from the hub, then **Update firmware** opens the update
-activity. It keeps the eight steps below. The hub also shows what the app
-learned about the repeater from read-only checks. A value marked "last known"
-came from the local cache; opening a screen never sends mesh traffic, and each
-section asks for its own refresh. Management writes are recorded locally with
-secrets removed. Firmware updates invalidate that repeater's cached facts.
+activity. It keeps the eight steps below. The hub also has screens for status,
+settings, a setting browser, the access list, neighbours and a raw command
+line. Stock repeaters work here too: the hub only locks features the node has
+not confirmed through read-only checks.
+
+A value marked "last known" came from the local cache; opening a screen never
+sends mesh traffic, and each section asks for its own refresh. Management
+writes are recorded locally with secrets removed. Firmware updates invalidate
+that repeater's cached facts. The access list screen asks for extra
+confirmation before lowering the companion's own access, so you cannot lock
+yourself out by accident.
 
 ## Getting started
 
