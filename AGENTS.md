@@ -36,7 +36,9 @@ accurate.
 - `app/` — Flutter UI, screens, orchestration, theme, app icon and desktop
   runners (Android, Linux, Windows, macOS). `lib/shell/` owns the hub, the
   connection indicator/sheet and the repeater picker; `lib/controllers/` owns
-  the connection lifecycle shared by every screen.
+  the connection lifecycle shared by every screen. Management activities live
+  in `lib/screens/management/`; one screen per command family, all using the
+  shared CLI service and last-known labels.
 - `app/test/` — widget and pure-Dart app tests. `support.dart` has the shared
   fixtures (`FakeLibrary`, `Catalog`, `OtaStatus`/`OtaNodeInfo`, `fakeCli`); use
   it for every screen test instead of touching platform plugins. In-memory

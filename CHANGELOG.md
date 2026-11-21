@@ -8,6 +8,7 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ### Added
 
+- **Every command family now has a proper UI.** Operations covers clock, adverts, logs, reboot and power with confirmations; Diagnostics covers region, sensors, GPS, bridge keys and board facts; History shows the redacted audit log; and a guided identity screen changes the node key with a typed confirmation and migrates the local directory to the new key.
 - **All five smaller fork features now have controls.** One screen covers radio2 (with the enabled preset shown read only), the battery gate, the mesh clock, the bot and the CPU/RX power profile. Validation mirrors the firmware: resume above suspend, votes within slots, bounded tolerance, valid bot channels and the radio2 versus power-saving exclusion.
 - **WiFi update for stock ESP32 repeaters.** The admin CLI arms the built-in update page, the app checks its identity, warns that it has no password, then uploads one `firmware` file part with the uppercase MD5 the firmware requires. Progress is shown and the result is only claimed after a re-login and version read. If the repeater opens the `MeshCore-OTA` hotspot, join it in system settings and return to the screen.
 

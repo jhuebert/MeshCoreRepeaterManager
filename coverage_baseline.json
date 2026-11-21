@@ -2,7 +2,7 @@
   "format": 1,
   "files": {
     "app/lib/app_state.dart": {
-      "covered": 685,
+      "covered": 689,
       "total": 941
     },
     "app/lib/controllers/connection_controller.dart": {
@@ -33,6 +33,10 @@
       "covered": 70,
       "total": 78
     },
+    "app/lib/screens/management/audit_log_screen.dart": {
+      "covered": 20,
+      "total": 22
+    },
     "app/lib/screens/management/browser_screen.dart": {
       "covered": 72,
       "total": 77
@@ -44,6 +48,10 @@
     "app/lib/screens/management/cli_screen.dart": {
       "covered": 77,
       "total": 95
+    },
+    "app/lib/screens/management/diagnostics_screen.dart": {
+      "covered": 85,
+      "total": 97
     },
     "app/lib/screens/management/filter_rule_editor_screen.dart": {
       "covered": 108,
@@ -77,6 +85,10 @@
       "covered": 201,
       "total": 241
     },
+    "app/lib/screens/management/identity_key_screen.dart": {
+      "covered": 58,
+      "total": 62
+    },
     "app/lib/screens/management/mqtt_screen.dart": {
       "covered": 118,
       "total": 125
@@ -84,6 +96,10 @@
     "app/lib/screens/management/neighbors_screen.dart": {
       "covered": 72,
       "total": 88
+    },
+    "app/lib/screens/management/operations_screen.dart": {
+      "covered": 47,
+      "total": 51
     },
     "app/lib/screens/management/settings_screen.dart": {
       "covered": 73,
@@ -178,8 +194,8 @@
       "total": 35
     },
     "app/lib/services/management_audit_store.dart": {
-      "covered": 53,
-      "total": 55
+      "covered": 56,
+      "total": 58
     },
     "app/lib/services/radio_plan.dart": {
       "covered": 72,
@@ -238,16 +254,16 @@
       "total": 28
     },
     "app/lib/shell/repeater_hub_screen.dart": {
-      "covered": 81,
-      "total": 93
+      "covered": 82,
+      "total": 94
     },
     "app/lib/shell/repeater_picker_sheet.dart": {
       "covered": 34,
       "total": 40
     },
     "app/lib/shell/routes.dart": {
-      "covered": 32,
-      "total": 32
+      "covered": 40,
+      "total": 40
     },
     "app/lib/theme.dart": {
       "covered": 6,
