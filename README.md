@@ -69,6 +69,13 @@ turns into battery, traffic and uptime trends. Charts are drawn from those
 saved readings, so opening the screen costs no airtime. Automatic refresh is
 off by default and stops after a bounded number of attempts.
 
+With the fleet feature, the **Fleet** screen configures one repeater and
+composes jobs as a single group text message. It previews the exact script,
+counts bytes, and collects one reply per repeater. A repeater that did not
+answer is shown as No reply, and resending uses the same job id so it is not
+run twice. The channel PSK is entered per session and never saved without an
+explicit opt-in.
+
 On a repeater with the filter feature, the **Filter** screen reads every rule
 page, controls the master switch and rate limit, and asks before deleting
 anything. Its rule editor checks patterns against the firmware's smaller regex

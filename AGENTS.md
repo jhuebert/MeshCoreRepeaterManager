@@ -54,10 +54,10 @@ accurate.
 - `packages/repeater_core/` — pure-Dart management domain: CLI reply taxonomy,
   read-only capability detection, binary report codecs (status, ACL,
   neighbours, owner info), the settings registry, chart sample metrics, the
-  filter dialect/translator/rule codecs and the tagged binary REQ client.
-  Original work, MIT. The filter dialect mirrors the fork's `PatternMatch` and
-  `TinyRegex`; keep it table-driven and re-check the native filter suite when
-  it changes.
+  filter dialect/translator/rule codecs, the fleet script/ACK codecs and the
+  tagged binary REQ client. Original work, MIT. The filter dialect mirrors the
+  fork's `PatternMatch` and `TinyRegex`; keep it table-driven and re-check the
+  native filter suite when it changes.
 - `packages/test_support/` — dev-only framed TCP client and test plumbing
   (MeshChameleon subtree).
 - `bench/` — hardware harness (never run in CI):
@@ -69,9 +69,10 @@ accurate.
 
 Per-repeater management data lives under the application support directory:
 `repeaters/index.json` and `repeaters/<id>/{profile,cache}.json`, plus
-`management_audit.json`. Every store is schema-versioned and migrates old
-shapes; the cache and audit log never hold secrets. `ota_settings.json` now
-writes `schema: 2` alongside the existing `offline` flag.
+`management_audit.json` and `fleet.json` (job history and queue). Every store
+is schema-versioned and migrates old shapes; the cache, audit log and fleet
+store never hold secrets. `ota_settings.json` now writes `schema: 2` alongside
+the existing `offline` flag. The fleet PSK is session-only for now.
 
 Keep protocol/core packages free of Flutter or platform imports. Platform code
 belongs in `app/`.

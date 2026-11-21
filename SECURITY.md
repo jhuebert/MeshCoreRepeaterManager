@@ -99,6 +99,12 @@ Repeater management adds three kinds of local data, all on the device only:
   raw command line refuses serial-only or destructive commands such as
   `get prv.key` and `erase` outright. Filter rule deletion asks first, and the
   editor's dry run is advisory: the repeater decides every packet.
+- **Fleet scripts execute with the repeater's own privileges.** The composer
+  shows the exact text and asks before sending; received group text is never
+  executed by the app, only key-prefixed ACKs are parsed. The PSK is entered
+  per session (or explicitly opted into secure storage in a later milestone),
+  is never written to the cache, and is not included in logs or exports. A
+  missing reply is shown as No reply, never as success.
 
 The settings file, audit log and repeater index are schema-versioned. A file
 from a newer schema is reported, not overwritten, and migrations keep the
