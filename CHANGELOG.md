@@ -6,6 +6,10 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-22
+
+later
+
 ### Fixed
 
 - **A foreground-service start timeout no longer blocks an update.** The

@@ -3,7 +3,7 @@ description: >-
   OTA firmware updates for MeshCore repeaters, over LoRa, from your phone.
 publish_to: none
 
-version: 1.1.0+5
+version: 1.1.1+7
 
 environment:
   sdk: ^3.5.0
