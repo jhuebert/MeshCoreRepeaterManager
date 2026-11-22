@@ -6,6 +6,16 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ## [Unreleased]
 
+### Fixed
+
+- **A foreground-service start timeout no longer blocks an update.** The
+  plugin polls its service state every 100 ms for five seconds after
+  `startService`, and on a busy device that poll can delay the service's own
+  start and report a false `ServiceTimeoutException`. The app now skips that
+  unreliable poll, so a transfer starts immediately; real start failures, such
+  as a background start the OS refuses, are still surfaced to the Updating
+  screen.
+
 ## [1.1.0] - 2026-11-21
 
 Later

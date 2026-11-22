@@ -11,6 +11,9 @@ class _FakeForegroundPlatform extends FlutterForegroundTaskPlatform {
   List<ForegroundServiceTypes>? serviceTypes;
   bool failStart = false;
   bool running = false;
+  // Simulates the dangling state flow that makes the plugin's poll time out.
+  bool stuckState = false;
+  bool? skipCheckDuringStart;
 
   @override
   Future<NotificationPermission> requestNotificationPermission() async {
@@ -33,9 +36,10 @@ class _FakeForegroundPlatform extends FlutterForegroundTaskPlatform {
     Function? callback,
   }) async {
     calls.add('start');
+    skipCheckDuringStart = FlutterForegroundTask.skipServiceResponseCheck;
     this.serviceTypes = serviceTypes;
     if (failStart) throw StateError('denied');
-    running = true;
+    if (!stuckState) running = true;
   }
 
   @override
@@ -58,7 +62,7 @@ class _FakeForegroundPlatform extends FlutterForegroundTaskPlatform {
   }
 
   @override
-  Future<bool> get isRunningService async => running;
+  Future<bool> get isRunningService async => stuckState ? false : running;
 }
 
 void main() {
@@ -87,7 +91,6 @@ void main() {
       TransferForegroundService.isSupported = () => true;
       platform = _FakeForegroundPlatform();
       FlutterForegroundTask.resetStatic();
-      FlutterForegroundTask.skipServiceResponseCheck = true;
       FlutterForegroundTaskPlatform.instance = platform;
       FlutterForegroundTask.init(
         androidNotificationOptions: AndroidNotificationOptions(
@@ -129,12 +132,35 @@ void main() {
       expect(platform.serviceTypes, [ForegroundServiceTypes.connectedDevice]);
     });
 
+    test('start skips the flaky response poll and restores the flag', () async {
+      await TransferForegroundService.start('Preparing update');
+
+      expect(platform.skipCheckDuringStart, isTrue);
+      expect(FlutterForegroundTask.skipServiceResponseCheck, isFalse);
+    });
+
+    test('a stuck service-state poll does not fail the start', () async {
+      // Without skipping the plugin's poll this hangs for five seconds and
+      // throws ServiceTimeoutException, which used to block the whole update.
+      platform.stuckState = true;
+      await TransferForegroundService.start('Preparing update');
+
+      expect(platform.calls, contains('start'));
+    });
+
+    test('an already-running service counts as a success', () async {
+      platform.running = true;
+      await TransferForegroundService.start('Preparing update');
+      expect(FlutterForegroundTask.skipServiceResponseCheck, isFalse);
+    });
+
     test('a refused start is surfaced to the caller', () async {
       platform.failStart = true;
       await expectLater(
         TransferForegroundService.start('Preparing update'),
         throwsA(isA<Exception>()),
       );
+      expect(FlutterForegroundTask.skipServiceResponseCheck, isFalse);
     });
 
     test('screen-on is sent to the activity channel', () async {
