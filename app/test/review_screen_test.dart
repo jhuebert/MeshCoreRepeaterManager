@@ -84,16 +84,16 @@ void reviewSummaryTests() {
     app.nodeStatus = nodeStatus(running: 'v1.1.0-r3');
     app.nodeInfo = nodeInfo(targetId: _targetId);
     app.catalog = catalog([
-      release('filter-v1.1.0-rc5', images: [
-        asset(_board, 'v1.1.0-rc5-cd72e1a2'),
+      release('v1.1.0-rc5', images: [
+        asset(_board, 'v1.1.0-rc5'),
       ]),
     ]);
     final lib = FakeLibrary();
     app.library = lib;
     lib.addImage(Uint8List.fromList(List.filled(64, 7)),
         env: _board,
-        version: 'v1.1.0-rc5-cd72e1a2',
-        fileName: '$_board-v1.1.0-rc5-cd72e1a2-filter-abc1234.bin');
+        version: 'v1.1.0-rc5',
+        fileName: '$_board-v1.1.0-rc5.bin');
     app.libraryEntries = await lib.list();
     await app.selectLibraryEntryForUpdate(app.libraryEntries.single);
     app.remoteDiff = remoteDiff();
@@ -106,7 +106,7 @@ void reviewSummaryTests() {
     expect(find.text('target repeater'), findsOneWidget);
     expect(find.text(_board), findsOneWidget); // the node's board
     expect(find.text('v1.1.0-r3'), findsOneWidget); // current firmware
-    expect(find.text('v1.1.0-rc5-cd72e1a2'), findsOneWidget); // update to
+    expect(find.text('v1.1.0-rc5'), findsOneWidget); // update to
     expect(find.text('Step 6 of 8'), findsOneWidget);
     expect(
         find.textContaining('After Start the repeater compares'), findsNothing);

@@ -36,8 +36,8 @@ AppState _app() {
   // network for them.
   app.library = support.FakeLibrary();
   app.catalog = support.catalog([
-    support.release('filter-v1.1.0-rc5', images: [
-      support.asset('Xiao_S3_WIO_repeater_observer', 'v1.1.0-rc5-cd72e1a2'),
+    support.release('v1.1.0-rc5', images: [
+      support.asset('Xiao_S3_WIO_repeater_observer', 'v1.1.0-rc5'),
     ]),
   ]);
   return app;
@@ -148,8 +148,8 @@ void main() {
     app.target = support.contact('riley');
     app.library = support.FakeLibrary();
     app.catalog = support.catalog([
-      support.release('filter-v1.1.0-rc5', images: [
-        support.asset('Xiao_S3_WIO_repeater_observer', 'v1.1.0-rc5-cd72e1a2'),
+      support.release('v1.1.0-rc5', images: [
+        support.asset('Xiao_S3_WIO_repeater_observer', 'v1.1.0-rc5'),
       ]),
     ]);
 
@@ -167,8 +167,8 @@ void main() {
     app.target = support.contact('riley');
     app.library = support.FakeLibrary();
     app.catalog = support.catalog([
-      support.release('filter-v1.1.0-rc5', images: [
-        support.asset('Xiao_S3_WIO_repeater_observer', 'v1.1.0-rc5-cd72e1a2'),
+      support.release('v1.1.0-rc5', images: [
+        support.asset('Xiao_S3_WIO_repeater_observer', 'v1.1.0-rc5'),
       ]),
     ]);
 

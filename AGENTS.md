@@ -67,7 +67,16 @@ full-image staging, windowed transfer, `ota apply`, post-reboot verification
 and `ota rollback`. The app also carries a version-based offline library, a
 three-way radio plan (live mesh / temporary private preset / the repeater's
 radio2). The diff is computed by the repeater hashing its own running image;
-no previous image is needed on the device.
+no previous image is needed on the device. Release version strings are labels
+for the offline library only, never diff inputs. `FirmwareLibrary.findBaseForSha`
+and `findBaseFor` are legacy helpers with no production caller; do not
+reintroduce a base picker or base matching.
+
+Current fork release naming (no `filter`): tags and firmware stamps
+`v<version>`, titles `Firmware <version>`, app-slot assets
+`<env>-v<version>.bin`. Old `filter-v*` tags and `-filter-<sha>` names are not
+accepted; a one-time startup pass drops saved library entries that still carry
+them.
 
 Planned and explicitly deferred:
 

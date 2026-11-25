@@ -69,12 +69,40 @@ enum UpdatePhase {
   failed,
 }
 
+/// True for the fork's retired `filter-v*` / `-filter-<sha>` naming. Used once
+/// at startup to drop library entries that can no longer identify a release.
+bool _hasRetiredNaming(String value) => value.toLowerCase().contains('filter');
+
+/// Delete only the library entries whose version or file name still uses the
+/// retired `filter` naming, leaving imports and other saved versions alone.
+/// Idempotent, so no schema marker is needed.
+Future<List<LibraryEntry>> cleanRetiredLibraryEntries(
+    FirmwareLibrary library) async {
+  final stale = (await library.list())
+      .where((e) =>
+          _hasRetiredNaming(e.version) || _hasRetiredNaming(e.fileName))
+      .toList();
+  for (final entry in stale) {
+    await library.delete(entry);
+  }
+  return stale;
+}
+
+/// A saved update cannot continue when its image was just deleted, or when its
+/// version label came from the retired naming scheme.
+bool resumeNeedsClearing(ResumePlan plan, List<LibraryEntry> stale) =>
+    _hasRetiredNaming(plan.version) ||
+    stale.any((e) => e.sha256.toLowerCase() == plan.imageSha256.toLowerCase());
+
 /// Everything the UI binds to. The app has exactly one job — take a
 /// repeater to a chosen firmware — so one state object with explicit steps
 /// is the right shape. Navigation is a step flow (connect → target →
 /// firmware → review → transfer → verify).
 class AppState extends ChangeNotifier {
   AppState();
+
+  /// Injectable for hermetic tests; defaults to the platform support dir.
+  Future<Directory> Function()? applicationSupportDirectory;
 
   // ---------------- transport ----------------
 
@@ -123,7 +151,8 @@ class AppState extends ChangeNotifier {
   OtaStatus? nodeStatus;
 
   /// What the node said in the `OP_INFO` handshake: capabilities, target id,
-  /// and the running image's full SHA-256 (the delta base identity). Null on
+  /// and the running image's full SHA-256. That hash invalidates a saved
+  /// resume when the node changes; it is not needed to build a diff. Null on
   /// firmware without the handshake.
   OtaNodeInfo? nodeInfo;
 
@@ -285,10 +314,15 @@ class AppState extends ChangeNotifier {
 
   // ---------------- lifecycle ----------------
 
+  Future<Directory> _supportDirectory() async {
+    final override = applicationSupportDirectory;
+    return override == null ? getApplicationSupportDirectory() : override();
+  }
+
   Future<FirmwareLibrary> _openLibrary() async {
     final existing = library;
     if (existing != null) return existing;
-    final support = await getApplicationSupportDirectory();
+    final support = await _supportDirectory();
     final opened = await FirmwareLibrary.open(support);
     library = opened;
     return opened;
@@ -308,7 +342,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> initServices() async {
     try {
-      final support = await getApplicationSupportDirectory();
+      final support = await _supportDirectory();
       _settingsFile = File('${support.path}/ota_settings.json');
       resumeStore = ResumeStore(File('${support.path}/ota_resume.bin'));
       resumePlan = await resumeStore?.load();
@@ -320,6 +354,18 @@ class AppState extends ChangeNotifier {
       // Settings are a convenience; a read failure must not stop the app.
     }
     final lib = await _openLibrary();
+    // The fork renamed its releases and dropped the build stamp from asset
+    // names. Saved entries carrying the old names can no longer match a
+    // release, so remove just those, leaving imports and the offline setting
+    // alone.
+    final stale = await cleanRetiredLibraryEntries(lib);
+    if (stale.isNotEmpty) {
+      final plan = resumePlan;
+      if (plan != null && resumeNeedsClearing(plan, stale)) {
+        await resumeStore?.clear();
+        resumePlan = null;
+      }
+    }
     libraryEntries = await lib.list();
     notifyListeners();
   }
@@ -523,12 +569,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     try {
       nodeStatus = await flow.probe(t, secret);
-      // The handshake is what makes a delta base and the board exact, but a
-      // node without it still updates (its `running=` stamp is the fallback).
+      // The handshake confirms the node's board and capabilities, but a node
+      // without it still updates (its `running=` stamp is the fallback).
       nodeInfo = nodeStatus == null ? null : await flow.tryNodeInfo(t);
       if (nodeStatus == null) {
         probeError = 'This firmware does not speak the ota CLI '
-            '(expected a fork lora-ota build, e.g. Xiao_S3_WIO_repeater-*-lora-ota).';
+            '(expected a fork repeater build, e.g. '
+            'Xiao_S3_WIO_repeater-v<version>).';
       } else {
         // The radio facts are only needed for the off-mesh transfer options;
         // old firmware answers neither, and neither query makes the probe fail.
@@ -814,8 +861,9 @@ class AppState extends ChangeNotifier {
   }
 
   /// Imported `.bin` files, newest first — the custom/local half of the
-  /// library. Identity is the SHA-256, so an imported image is a delta base
-  /// or an update candidate exactly like a downloaded one.
+  /// library. Identity is the SHA-256, so an imported image is an update
+  /// candidate exactly like a downloaded one. It is never used as a local
+  /// diff base: the repeater hashes its own running image.
   List<LibraryEntry> get importedEntries =>
       libraryEntries.where((e) => e.origin != 'github').toList()
         ..sort((a, b) => b.added.compareTo(a.added));
@@ -845,8 +893,7 @@ class AppState extends ChangeNotifier {
   }
 
   /// Delete [entries] from the library and repair any selection that pointed
-  /// at them: the image, the explicit delta base and the forced-full-image
-  /// choice are all dropped rather than left dangling.
+  /// at them: the selected image is dropped rather than left dangling.
   Future<void> deleteLibraryEntries(Iterable<LibraryEntry> entries) async {
     final list = entries.toList();
     if (list.isEmpty) return;
@@ -1031,13 +1078,10 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Version of the current selection, full stamp.
+  /// Version of the current selection. Release versions are already the
+  /// sha-free `v<version>` token, so this is also what the UI shows.
   String? get selectedVersion =>
       selectedAsset?.version ?? selectedLibraryEntry?.version;
-
-  /// Display version of the current selection.
-  String? get selectedDisplayVersion =>
-      selectedAsset?.displayVersion ?? selectedLibraryEntry?.version;
 
   /// The preset the node's live mesh runs on (falls back to the companion's —
   /// the same mesh when the update path works at all).
@@ -1997,8 +2041,8 @@ class OfflineVersion {
 
   final String version;
 
-  /// The release tag (e.g. `filter-v1.1.0-rc5`) when the catalog knows it;
-  /// versions are the unit the user thinks in. Null without a catalog.
+  /// The release tag (e.g. `v1.1.0-rc5`) when the catalog knows it; versions
+  /// are the unit the user thinks in. Null without a catalog.
   final String? tag;
   final List<LibraryEntry> entries;
   final bool complete;

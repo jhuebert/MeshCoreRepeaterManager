@@ -17,7 +17,7 @@ void _bigView(WidgetTester tester) {
   addTearDown(tester.view.reset);
 }
 
-const _stamp = 'v1.1.0-rc5-cd72e1a2';
+const _stamp = 'v1.1.0-rc5';
 
 Future<AppState> _app() async {
   final app = AppState();
@@ -26,11 +26,11 @@ Future<AppState> _app() async {
   lib.addImage(Uint8List.fromList(List.filled(64, 1)),
       env: _board,
       version: _stamp,
-      fileName: '$_board-$_stamp-filter-abc1234.bin');
+      fileName: '$_board-$_stamp.bin');
   lib.addImage(Uint8List.fromList(List.filled(64, 2)),
       env: 'RAK_4631_repeater',
       version: _stamp,
-      fileName: 'RAK_4631_repeater-$_stamp-filter-abc1234.bin');
+      fileName: 'RAK_4631_repeater-$_stamp.bin');
   // One imported (custom) bin.
   lib.addImage(Uint8List.fromList(List.filled(64, 3)),
       env: 'custom',
@@ -40,11 +40,11 @@ Future<AppState> _app() async {
   app.library = lib;
   app.libraryEntries = await lib.list();
   app.catalog = catalog([
-    release('filter-v1.1.0-rc5', images: [
+    release('v1.1.0-rc5', images: [
       asset(_board, _stamp, size: 64),
       asset('RAK_4631_repeater', _stamp, size: 64),
     ]),
-    release('filter-v1.0.0-old', images: [
+    release('v1.0.0-old', images: [
       asset('RAK_4631_repeater', 'v1.0.0-old', size: 64),
     ]),
   ]);
@@ -78,8 +78,8 @@ void main() {
     await tester.pumpWidget(wrap(app, const FirmwareScreen(updateMode: false)));
     await tester.pump();
 
-    expect(find.text('filter-v1.1.0-rc5'), findsOneWidget);
-    expect(find.text('filter-v1.0.0-old'), findsOneWidget);
+    expect(find.text('v1.1.0-rc5'), findsOneWidget);
+    expect(find.text('v1.0.0-old'), findsOneWidget);
   });
 
   testWidgets('tapping a release downloads any missing images', (tester) async {
@@ -89,10 +89,10 @@ void main() {
     await tester.pump();
 
     // Everything is already saved, so the tap is a no-op with feedback.
-    await tester.tap(find.text('filter-v1.1.0-rc5'));
+    await tester.tap(find.text('v1.1.0-rc5'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 120));
-    expect(find.text('filter-v1.1.0-rc5 is already saved'), findsOneWidget);
+    expect(find.text('v1.1.0-rc5 is already saved'), findsOneWidget);
     expect(app.imageError, isNull);
     await tester.pumpAndSettle();
   });
@@ -109,7 +109,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.byTooltip('Delete this version (2 image(s))'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Delete filter-v1.1.0-rc5?'), findsOneWidget);
+    expect(find.textContaining('Delete v1.1.0-rc5?'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
     await tester.pumpAndSettle();
 
@@ -130,8 +130,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Offline GitHub view: only the saved version.
-    expect(find.text('filter-v1.1.0-rc5'), findsOneWidget);
-    expect(find.text('filter-v1.0.0-old'), findsNothing); // not downloaded
+    expect(find.text('v1.1.0-rc5'), findsOneWidget);
+    expect(find.text('v1.0.0-old'), findsNothing); // not downloaded
     expect(find.textContaining('1 version(s) on this device'), findsOneWidget);
 
     // Imported is untouched by offline mode.
@@ -216,7 +216,7 @@ void _managerModeTests() {
     await tester.tap(find.byTooltip('Go offline'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('filter-v1.1.0-rc5'));
+    await tester.tap(find.text('v1.1.0-rc5'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 120));
     expect(find.textContaining('Nothing new to download'), findsOneWidget);
@@ -233,7 +233,7 @@ void _managerModeTests() {
     await tester.pump();
 
     expect(find.textContaining('board is not recognized'), findsOneWidget);
-    expect(find.text('filter-v1.1.0-rc5'), findsNothing);
+    expect(find.text('v1.1.0-rc5'), findsNothing);
   });
 
   testWidgets('offline with versions saved only for other boards explains it',
@@ -254,10 +254,10 @@ void _managerModeTests() {
 
     expect(find.text('Nothing saved for your board'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Go online'), findsOneWidget);
-    expect(find.text('filter-v1.1.0-rc5'), findsNothing);
+    expect(find.text('v1.1.0-rc5'), findsNothing);
   });
 
-  testWidgets('imported files can be inspected and used as delta base',
+  testWidgets('imported files can be inspected and selected for the update',
       (tester) async {
     _bigView(tester);
     final app = await _app();

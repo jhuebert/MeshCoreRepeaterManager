@@ -61,7 +61,7 @@ class ReviewScreen extends StatelessWidget {
             value: status?.running.isNotEmpty == true ? status!.running : '?',
           ),
           const SectionHeader('This update'),
-          InfoRow(label: 'Update to', value: app.selectedDisplayVersion ?? '?'),
+          InfoRow(label: 'Update to', value: app.selectedVersion ?? '?'),
           InfoRow(
               label: 'Image size', value: formatBytes(imageBytes), mono: false),
           InfoRow(label: 'Radio', value: _radioLabel(app), mono: false),

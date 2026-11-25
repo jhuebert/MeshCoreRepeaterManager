@@ -39,7 +39,7 @@ const _width = 860.0;
 const _height = 1864.0;
 const _scale = 2.0;
 const _board = 'Xiao_S3_WIO_repeater_observer';
-const _stamp = 'v1.1.0-rc5-cd72e1a2';
+const _stamp = 'v1.1.0-rc5';
 
 /// One guide screenshot: the fixture state, the screen, and optional setup
 /// that has to run before/after the first pump.
@@ -75,14 +75,14 @@ final _livePreset = LoRaPreset(
 /// Catalog with a stable version for our board, a dev version, and one release
 /// with no image for the node (hidden by the picker).
 Catalog _catalog() => fix.catalog([
-      fix.release('filter-v1.1.0-rc5', images: [
+      fix.release('v1.1.0-rc5', images: [
         fix.asset(_board, _stamp, size: 1449824),
         fix.asset('RAK_4631_repeater', _stamp, size: 1449824),
       ]),
-      fix.release('filter-v1.1.0-dev.9', images: [
-        fix.asset(_board, 'v1.1.0-dev.9-bbbbbbb', size: 1512000),
+      fix.release('v1.1.0-dev.9', images: [
+        fix.asset(_board, 'v1.1.0-dev.9', size: 1512000),
       ]),
-      fix.release('filter-v1.0.0-old', images: [
+      fix.release('v1.0.0-old', images: [
         fix.asset('RAK_4631_repeater', 'v1.0.0-old'),
       ]),
     ]);
@@ -105,11 +105,11 @@ List<_Shot> _shots() {
     lib.addImage(Uint8List.fromList(List<int>.filled(1449824, 1)),
         env: _board,
         version: _stamp,
-        fileName: '$_board-$_stamp-filter-abc1234.bin');
+        fileName: '$_board-$_stamp.bin');
     lib.addImage(Uint8List.fromList(List<int>.filled(1449824, 2)),
         env: 'RAK_4631_repeater',
         version: _stamp,
-        fileName: 'RAK_4631_repeater-$_stamp-filter-abc1234.bin');
+        fileName: 'RAK_4631_repeater-$_stamp.bin');
     lib.addImage(Uint8List.fromList(List<int>.filled(4096, 3)),
         env: 'custom',
         version: 'custom',

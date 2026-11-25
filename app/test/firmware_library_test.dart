@@ -32,7 +32,7 @@ void main() {
     final saved = await library.importBytes(
       _bytes(7, 400),
       env: 'Xiao_S3_WIO_repeater',
-      version: 'v1.2.0-filter-0000001',
+      version: 'v1.2.0',
       origin: 'github',
     );
     final prefix = saved.sha256.substring(0, 16);
@@ -93,10 +93,10 @@ void main() {
     final entry = await library.importBytes(
       _bytes(31, 400),
       env: 'RAK_4631_repeater',
-      version: 'v1.2.0-filter-0000001',
+      version: 'v1.2.0',
       origin: 'github',
     );
-    expect(entry.fileName, 'RAK_4631_repeater-v1.2.0-filter-0000001.bin');
+    expect(entry.fileName, 'RAK_4631_repeater-v1.2.0.bin');
   });
 
   test('a sidecar without a timestamp falls back to the bin mtime', () async {
@@ -104,7 +104,7 @@ void main() {
     final entry = await library.importBytes(
       image,
       env: 'Xiao_S3_WIO_repeater',
-      version: 'v1.2.0-filter-0000002',
+      version: 'v1.2.0',
       origin: 'github',
       fileName: 'ts.bin',
     );
@@ -125,9 +125,9 @@ void main() {
     final entry = await library.importBytes(
       image,
       env: 'Xiao_S3_WIO_repeater',
-      version: 'v1.18.0-r4-filter-d1ebd2f',
+      version: 'v1.18.0-r4',
       origin: 'github',
-      fileName: 'Xiao_S3_WIO_repeater-v1.18.0-r4-filter-d1ebd2f.bin',
+      fileName: 'Xiao_S3_WIO_repeater-v1.18.0-r4.bin',
     );
     expect(entry.size, image.length);
     expect(entry.sha256, sha256.convert(image).toString());
@@ -135,7 +135,7 @@ void main() {
     final entries = await library.list();
     expect(entries, hasLength(1));
     expect(entries.single.env, 'Xiao_S3_WIO_repeater');
-    expect(entries.single.version, 'v1.18.0-r4-filter-d1ebd2f');
+    expect(entries.single.version, 'v1.18.0-r4');
 
     final restored = await library.read(entries.single);
     expect(restored, image);
@@ -149,26 +149,26 @@ void main() {
     await library.importBytes(
       image,
       env: 'Xiao_S3_WIO_repeater',
-      version: 'v1.18.0-r4-filter-d1ebd2f',
+      version: 'v1.18.0-r4',
       origin: 'github',
       fileName: 'x.bin',
     );
     final hit = await library.findBaseFor(
       env: 'Xiao_S3_WIO_repeater',
-      runningVersion: 'v1.18.0-r4-filter-d1ebd2f',
+      runningVersion: 'v1.18.0-r4',
     );
     expect(hit, isNotNull);
 
     expect(
       await library.findBaseFor(
           env: 'Xiao_S3_WIO_repeater',
-          runningVersion: 'v1.18.0-dev.7-filter-aaaaaaa'),
+          runningVersion: 'v1.18.0-dev.7'),
       isNull,
     );
     expect(
       await library.findBaseFor(
           env: 'RAK_4631_repeater',
-          runningVersion: 'v1.18.0-r4-filter-d1ebd2f'),
+          runningVersion: 'v1.18.0-r4'),
       isNull,
     );
   });
@@ -178,7 +178,7 @@ void main() {
     final entry = await library.importBytes(
       image,
       env: 'Xiao_S3_WIO_repeater_observer',
-      version: 'v1.18.0-r4-filter-d1ebd2f',
+      version: 'v1.18.0-r4',
       origin: 'github',
       fileName: 'x.bin',
     );

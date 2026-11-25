@@ -69,7 +69,7 @@ class _FakeCompanion {
 
   late Uint8List _running;
   Uint8List? _staging;
-  String _nodeVersion = 'v1.17.0-filter-aaaaaaaaaaaa';
+  String _nodeVersion = 'v1.17.0';
   String? _previousVersion;
   Uint8List _previousImage = Uint8List(0);
 
@@ -353,7 +353,7 @@ class _FakeCompanion {
       _previousImage = Uint8List.fromList(_running);
       _previousVersion = _nodeVersion;
       _running = Uint8List.fromList(_staging!);
-      _nodeVersion = 'v1.18.0-r4-filter-d1ebd2f';
+      _nodeVersion = 'v1.18.0-r4';
       _resetStaging();
       return 'OK - applied; rebooting';
     }
@@ -652,7 +652,7 @@ void main() {
   test('probe logs in and parses ota status', () async {
     final status = await flow.probe(fake.target, 'hunter2');
     expect(status, isNotNull);
-    expect(status!.running, 'v1.17.0-filter-aaaaaaaaaaaa');
+    expect(status!.running, 'v1.17.0');
     expect(status.state, OtaPhase.idle);
     expect(status.ok, isTrue);
   });
@@ -854,7 +854,7 @@ void main() {
       final ok = await flow.awaitVersion(
         fake.target,
         'hunter2',
-        'v1.17.0-filter', // the fake node's boot stamp
+        'v1.17.0', // the fake node's boot stamp
         expectedImageSha256: Uint8List(32),
         timeout: const Duration(seconds: 2),
         interval: const Duration(milliseconds: 20),
@@ -1100,7 +1100,7 @@ void main() {
     app.tcpLinkFactory = (_, __) => fake.link;
     await app.connectTcp(host: 'unused', port: 0);
     app.target = fake.target;
-    final entry = lib.addImage(image, env: env, version: 'v1.1.0-rc5-cd72e1a2');
+    final entry = lib.addImage(image, env: env, version: 'v1.1.0-rc5');
     await app.selectLibraryEntryForUpdate(entry);
 
     await app.applyAndVerify(expectedVersion: 'a-stamp-that-matches-nothing');
@@ -1207,7 +1207,7 @@ void main() {
     final entry = lib.addImage(
       Uint8List.fromList(List<int>.generate(300, (i) => i & 0xFF)),
       env: 'Xiao_S3_WIO_repeater',
-      version: 'v1.18.0-r4-filter-d1ebd2f',
+      version: 'v1.18.0-r4',
     );
     await app.selectLibraryEntryForUpdate(entry);
     // Step 5's comparison must be present before Start can arm anything.

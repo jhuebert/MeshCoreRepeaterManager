@@ -18,7 +18,7 @@ void main() {
       () {
     final app = AppState();
     app.catalog = catalog([
-      release('filter-v1.1.0-rc5', images: [
+      release('v1.1.0-rc5', images: [
         asset(_board, 'v1.1.0-rc5'),
         asset('RAK_4631_repeater', 'v1.1.0-rc5'),
       ]),
@@ -59,17 +59,17 @@ void main() {
   test('the version picker only ever offers the node-board image', () {
     final app = AppState();
     app.catalog = catalog([
-      release('filter-v1.1.0-rc5', images: [
+      release('v1.1.0-rc5', images: [
         asset(_board, 'v1.1.0-rc5'),
         asset('RAK_4631_repeater', 'v1.1.0-rc5'),
       ]),
-      release('filter-v1.0.0-old', images: [
+      release('v1.0.0-old', images: [
         asset('RAK_4631_repeater', 'v1.0.0-old'),
       ]),
     ]);
 
     final visible = app.visibleReleasesFor(_board);
-    expect(visible.map((r) => r.tag), ['filter-v1.1.0-rc5']);
+    expect(visible.map((r) => r.tag), ['v1.1.0-rc5']);
     expect(app.assetForEnvironment(visible.single, _board)?.env, _board);
     expect(app.assetForEnvironment(visible.single, 'ARM_unknown'), isNull);
     app.nodeInfo = nodeInfo(targetId: _targetId);
@@ -77,7 +77,7 @@ void main() {
         isTrue);
     // Releases with no image for this board are hidden entirely.
     expect(app.visibleReleasesFor('RAK_4631_repeater').map((r) => r.tag),
-        ['filter-v1.1.0-rc5', 'filter-v1.0.0-old']);
+        ['v1.1.0-rc5', 'v1.0.0-old']);
   });
 
   test('a cached asset is selected without any network access', () async {
@@ -86,12 +86,12 @@ void main() {
     final image = Uint8List.fromList(List.filled(96, 7));
     final entry = lib.addImage(image,
         env: _board,
-        version: 'v1.1.0-rc5-cd72e1a2',
-        fileName: '$_board-v1.1.0-rc5-cd72e1a2-filter-abc1234.bin');
+        version: 'v1.1.0-rc5',
+        fileName: '$_board-v1.1.0-rc5.bin');
     app.library = lib;
     app.libraryEntries = await lib.list();
 
-    await app.selectAsset(asset(_board, 'v1.1.0-rc5-cd72e1a2'));
+    await app.selectAsset(asset(_board, 'v1.1.0-rc5'));
 
     expect(app.imageError, isNull);
     expect(app.selectedImage, image);
@@ -103,7 +103,7 @@ void main() {
     app.library = FakeLibrary();
     app.offlineMode = true;
 
-    await app.selectAsset(asset(_board, 'v1.1.0-rc5-cd72e1a2'));
+    await app.selectAsset(asset(_board, 'v1.1.0-rc5'));
     expect(app.imageError, contains('offline'));
     expect(app.selectedImage, isNull);
   });
@@ -112,7 +112,7 @@ void main() {
     final app = AppState();
     app.offlineMode = true;
     final saved = await app.downloadReleaseToLibrary(
-      release('filter-v1.1.0-rc5', images: [asset(_board, 'v1.1.0-rc5')]),
+      release('v1.1.0-rc5', images: [asset(_board, 'v1.1.0-rc5')]),
     );
     expect(saved, 0);
   });
@@ -123,21 +123,21 @@ void main() {
     lib.addImage(Uint8List.fromList(List.filled(16, 1)),
         env: _board,
         version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5-filter-abc1234.bin');
+        fileName: '$_board-v1.1.0-rc5.bin');
     lib.addImage(Uint8List.fromList(List.filled(16, 2)),
         env: 'RAK_4631_repeater',
         version: 'v1.1.0-rc5',
-        fileName: 'RAK_4631_repeater-v1.1.0-rc5-filter-abc1234.bin');
+        fileName: 'RAK_4631_repeater-v1.1.0-rc5.bin');
     lib.addImage(Uint8List.fromList(List.filled(16, 3)),
         env: _board, version: 'v1.1.0-rc4');
     app.library = lib;
     app.libraryEntries = await lib.list();
     app.catalog = catalog([
-      release('filter-v1.1.0-rc5', images: [
+      release('v1.1.0-rc5', images: [
         asset(_board, 'v1.1.0-rc5'),
         asset('RAK_4631_repeater', 'v1.1.0-rc5'),
       ]),
-      release('filter-v1.1.0-rc4', images: [
+      release('v1.1.0-rc4', images: [
         asset(_board, 'v1.1.0-rc4'),
         asset('RAK_4631_repeater', 'v1.1.0-rc4'),
       ]),
@@ -215,7 +215,7 @@ void main() {
     final update = lib.addImage(updateImage,
         env: _board,
         version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5-abc1234.bin');
+        fileName: '$_board-v1.1.0-rc5.bin');
     app.library = lib;
     app.libraryEntries = await lib.list();
     app.nodeStatus = nodeStatus();
@@ -236,11 +236,11 @@ void main() {
     final first = lib.addImage(Uint8List.fromList(List.filled(64, 4)),
         env: _board,
         version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5-abc1234.bin');
+        fileName: '$_board-v1.1.0-rc5.bin');
     final second = lib.addImage(Uint8List.fromList(List.filled(64, 5)),
         env: _board,
         version: 'v1.1.0-rc6',
-        fileName: '$_board-v1.1.0-rc6-abc1234.bin');
+        fileName: '$_board-v1.1.0-rc6.bin');
     app.library = lib;
     app.libraryEntries = await lib.list();
     app.remoteDiff = remoteDiff();
@@ -258,7 +258,7 @@ void main() {
     lib.addImage(Uint8List.fromList(List.filled(16, 1)),
         env: _board,
         version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5-abc1234.bin');
+        fileName: '$_board-v1.1.0-rc5.bin');
     lib.addImage(Uint8List.fromList(List.filled(16, 2)),
         env: 'custom',
         version: 'custom',
@@ -277,7 +277,7 @@ void main() {
     final update = lib.addImage(Uint8List.fromList(List.filled(64, 4)),
         env: _board,
         version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5-abc1234.bin');
+        fileName: '$_board-v1.1.0-rc5.bin');
     app.library = lib;
     app.libraryEntries = await lib.list();
     await app.selectLibraryEntryForUpdate(update);
@@ -298,7 +298,7 @@ void main() {
     final update = lib.addImage(Uint8List.fromList(List.filled(64, 4)),
         env: _board,
         version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5-abc1234.bin');
+        fileName: '$_board-v1.1.0-rc5.bin');
     app.library = lib;
     app.libraryEntries = await lib.list();
     await app.selectLibraryEntryForUpdate(update);

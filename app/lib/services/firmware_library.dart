@@ -43,11 +43,11 @@ class LibraryEntry {
 }
 
 /// Persistent local firmware library. Every entry is `<id>.bin` plus an
-/// `<id>.json` sidecar with env/version/origin metadata. The app finds
-/// delta bases by matching the node's reported running image SHA-256 (the
-/// `OP_INFO` handshake), falling back to the `running=` version stamp; and
-/// never uploads anything to this directory implicitly — images land here
-/// only from an explicit download or an explicit .bin import.
+/// `<id>.json` sidecar with env/version/origin metadata. Images land here only
+/// from an explicit download or an explicit .bin import; nothing is uploaded
+/// implicitly. The matchers below are legacy helpers retained for their tests:
+/// the app no longer needs a local image to compute a diff, so no delta-base
+/// lookup has a production caller.
 class FirmwareLibrary {
   FirmwareLibrary(this.directory);
 
@@ -72,12 +72,10 @@ class FirmwareLibrary {
     return out;
   }
 
-  /// Find the base image for a delta against a node whose running image hashes
-  /// to [runningSha256] (the `OP_INFO` handshake's full SHA-256). A byte match
-  /// is the identity, so the entry's environment does not matter: the same
-  /// image is the same base either way. Returns null when the library holds no
-  /// such image (the caller falls back to the version stamp, then to a full
-  /// image).
+  /// Legacy matcher: finds an entry whose SHA-256 is [runningSha256] (the
+  /// `OP_INFO` handshake's full SHA-256). The app has no production caller:
+  /// the repeater hashes its own image for the diff, so no local base is used.
+  /// Retained for the library tests.
   Future<LibraryEntry?> findBaseForSha(List<int> runningSha256) async {
     final id = bytesToHex(runningSha256);
     for (final entry in await list()) {
@@ -112,14 +110,9 @@ class FirmwareLibrary {
     return entry;
   }
 
-  /// Find the base image for a delta against a node running [runningVersion]
-  /// (the full `running=` stamp from `ota status`, e.g.
-  /// `v1.18.0-r4-filter-d1ebd2f`). The version stamp is a weaker identity than
-  /// [findBaseForSha]: two builds of one commit can carry the same stamp and
-  /// still differ (the build date is embedded). A wrong guess is caught by the
-  /// device SHA gate (err=4) — nothing boots; the operator retries full-image.
-  /// Returns null when there is no confident base — the caller falls back
-  /// to a full image.
+  /// Legacy matcher: finds an entry with the same env and [runningVersion]
+  /// stamp. Unused by the app since the repeater started hashing its own
+  /// running image for the comparison. Retained for the library tests.
   Future<LibraryEntry?> findBaseFor(
       {required String env, required String runningVersion}) async {
     for (final entry in await list()) {

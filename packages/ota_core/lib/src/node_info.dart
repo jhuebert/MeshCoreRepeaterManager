@@ -84,9 +84,9 @@ class OtaNodeInfo {
   /// The running firmware version string (from `FIRMWARE_VERSION`).
   final String runningVersion;
 
-  /// Full SHA-256 of the running image — the strongest possible delta base
-  /// match: a library entry whose image hashes to this exact value *is* the
-  /// running image.
+  /// Full SHA-256 of the running image, taken over exactly the bytes an
+  /// update wrote. Used to detect a node change; the diff itself is computed
+  /// on the repeater from its own image.
   final Uint8List runningSha256;
 
   bool get supportsDelta => features & otaFeatDelta != 0;

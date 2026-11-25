@@ -146,7 +146,7 @@ class _TransferScreenState extends State<TransferScreen> {
               target == null
                   ? 'Updating…'
                   : 'Updating ${target.name.isNotEmpty ? target.name : 'the node'} to '
-                      '${app.selectedDisplayVersion ?? '?'}',
+                      '${app.selectedVersion ?? '?'}',
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
             ),
           ),

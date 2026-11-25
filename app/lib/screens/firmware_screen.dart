@@ -666,7 +666,7 @@ class _FirmwareScreenState extends State<FirmwareScreen>
       );
       _showSnack(parsed == null
           ? 'Imported $fileName as a custom image'
-          : 'Imported ${parsed.env} ${parsed.displayVersion}');
+          : 'Imported ${parsed.env} ${parsed.version}');
     } catch (e) {
       _showSnack('Import failed: $e');
     }
@@ -689,8 +689,8 @@ class _FirmwareScreenState extends State<FirmwareScreen>
     return file?.path;
   }
 
-  /// Confirm, delete, and report. The delta base and any selected image are
-  /// repaired inside [AppState.deleteLibraryEntries].
+  /// Confirm, delete, and report. Any selected image is repaired inside
+  /// [AppState.deleteLibraryEntries].
   Future<void> _deleteEntries(
     AppState app,
     Iterable<LibraryEntry> entries, {
@@ -851,7 +851,7 @@ class _FirmwareScreenState extends State<FirmwareScreen>
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
                   'Selected: ${env ?? '?'} · '
-                  '${app.selectedDisplayVersion ?? '?'} · '
+                  '${app.selectedVersion ?? '?'} · '
                   '${formatBytes(app.selectedImage!.length)}',
                   style:
                       const TextStyle(color: OtaTheme.textMuted, fontSize: 12),

@@ -99,6 +99,10 @@ version, newest first. **Stable** and **Dev** are separate tabs. Only versions
 with a file for the repeater's board are shown, and the app picks that file
 for you: there is no board picker and no per-device list to manage.
 
+Versions are named `v<version>`, for example `v1.18.0-r4`, the same token the
+repeater reports. Versions saved under the older `filter` names are removed the
+first time the app starts after this update, so download them again.
+
 - Tapping a version downloads **its file for your board** (if it is not
   already on the device) and selects it for this update.
 - If the repeater did not answer its capability check (Sign in shows **Board:

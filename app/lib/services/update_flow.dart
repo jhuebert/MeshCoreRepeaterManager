@@ -358,9 +358,10 @@ class UpdateFlow {
     } catch (_) {}
   }
 
-  /// After an apply/rollback reboot, re-login and poll `version` until it
-  /// matches [expectedVersion] (substring match — device versions carry the
-  /// build stamp, e.g. `v1.18.0-r4-filter-<sha>`) or the timeout expires.
+  /// After an apply/rollback reboot, re-login and poll `version` until its
+  /// version token equals [expectedVersion] (e.g. `v1.18.0-r4`) or the timeout
+  /// expires. The CLI appends `(Build: ...)`; comparing whole tokens avoids a
+  /// short stamp matching a longer one.
   ///
   /// Returns true when the new firmware answered. False means the node is
   /// still on the old partition — either the boot health check flipped it
@@ -396,7 +397,8 @@ class UpdateFlow {
             // way, the version string is the fallback below.
           }
           final v = (await client.remoteCli(target, 'version')).trim();
-          if (v.contains(expectedVersion)) return true;
+          final token = v.split(RegExp(r'\s+')).first;
+          if (token == expectedVersion) return true;
         }
       } catch (_) {
         // Still booting — keep polling.

@@ -29,7 +29,7 @@ Contact contact(String name,
 }
 
 OtaStatus nodeStatus({
-  String running = 'v1.1.0-rc5-cd72e1a2',
+  String running = 'v1.1.0-rc5',
   String shaPrefix = '2979666babcfc001',
   OtaPhase state = OtaPhase.idle,
   int size = 0,
@@ -47,7 +47,7 @@ OtaStatus nodeStatus({
 
 OtaNodeInfo nodeInfo({
   int targetId = 0xba7783f9,
-  String runningVersion = 'v1.1.0-rc5-cd72e1a2',
+  String runningVersion = 'v1.1.0-rc5',
   Uint8List? runningSha256,
   int slotSize = 3342336,
 }) =>
@@ -90,7 +90,7 @@ RemoteDiffResult remoteDiff({
 FirmwareAsset asset(String env, String version,
         {String? sha256, int size = 1449824}) =>
     FirmwareAsset(
-      name: '$env-$version-filter-abc1234.bin',
+      name: '$env-$version.bin',
       env: env,
       version: version,
       size: size,
@@ -104,7 +104,7 @@ FirmwareRelease release(String tag,
         bool prerelease = false}) =>
     FirmwareRelease(
       tag: tag,
-      name: tag,
+      name: 'Firmware $tag',
       prerelease: prerelease,
       publishedAt: (published ?? DateTime(2026, 11, 1)).toIso8601String(),
       appImages: images,

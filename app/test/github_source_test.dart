@@ -14,7 +14,7 @@ Map<String, dynamic> _releaseJson({
 }) =>
     {
       'tag_name': tag,
-      'name': 'Filter Firmware $tag',
+      'name': 'Firmware $tag',
       'prerelease': prerelease,
       'published_at': publishedAt,
       'assets': assets,
@@ -34,32 +34,31 @@ void main() {
   group('FirmwareAsset.parse', () {
     test('parses repeater app images with hyphenated envs', () {
       final asset = FirmwareAsset.parse(
-        name: 'Ebyte_EoRa-S3_Repeater-v1.18.0-r4-filter-d1ebd2f.bin',
+        name: 'Ebyte_EoRa-S3_Repeater-v1.18.0-r4.bin',
         size: 123,
         downloadUrl: 'https://example/x',
       );
       expect(asset, isNotNull);
       expect(asset!.env, 'Ebyte_EoRa-S3_Repeater');
-      expect(asset.version, 'v1.18.0-r4-filter-d1ebd2f');
-      expect(asset.displayVersion, 'v1.18.0-r4');
+      expect(asset.version, 'v1.18.0-r4');
     });
 
     test('parses dotted dev versions', () {
       final asset = FirmwareAsset.parse(
-        name: 'Xiao_S3_WIO_repeater-v1.18.0-dev.7-filter-0e03f87e.bin',
+        name: 'Xiao_S3_WIO_repeater-v1.18.0-dev.7.bin',
         size: 1,
         downloadUrl: '',
       );
       expect(asset!.env, 'Xiao_S3_WIO_repeater');
-      expect(asset.version, 'v1.18.0-dev.7-filter-0e03f87e');
-      expect(asset.displayVersion, 'v1.18.0-dev.7');
+      expect(asset.version, 'v1.18.0-dev.7');
     });
 
     test('rejects merged images and non-firmware assets', () {
       for (final name in [
-        'Xiao_S3_WIO_repeater-v1.18.0-r4-filter-d1ebd2f-merged.bin',
-        'Xiao_S3_WIO_repeater-v1.18.0-r4-filter-d1ebd2f.uf2',
-        'Xiao_S3_WIO_repeater-v1.18.0-r4-filter-d1ebd2f.zip',
+        'Xiao_S3_WIO_repeater-v1.18.0-r4-merged.bin',
+        'Xiao_S3_WIO_repeater-v1.18.0-r4.uf2',
+        'Xiao_S3_WIO_repeater-v1.18.0-r4.zip',
+        'Xiao_S3_WIO_repeater-v1.18.0-r4-filter-d1ebd2f.bin',
         'SHA256SUMS.txt',
         'random.bin',
       ]) {
@@ -79,29 +78,29 @@ void main() {
       final imageSha = sha256.convert(image).toString();
       final releasesJson = jsonEncode([
         _releaseJson(
-          tag: 'filter-v1.18.0-r4',
+          tag: 'v1.18.0-r4',
           prerelease: false,
           publishedAt: '2026-11-12T20:17:54Z',
           assets: [
-            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4-filter-d1ebd2f.bin',
-                image.length, 'filter-v1.18.0-r4'),
-            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4-filter-d1ebd2f-merged.bin',
-                9000000, 'filter-v1.18.0-r4'),
-            _asset('SHA256SUMS.txt', 10, 'filter-v1.18.0-r4'),
+            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4.bin',
+                image.length, 'v1.18.0-r4'),
+            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4-merged.bin',
+                9000000, 'v1.18.0-r4'),
+            _asset('SHA256SUMS.txt', 10, 'v1.18.0-r4'),
           ],
         ),
         _releaseJson(
-          tag: 'filter-v1.18.0-dev.7',
+          tag: 'v1.18.0-dev.7',
           prerelease: true,
           publishedAt: '2026-11-10T19:16:00Z',
           assets: [
-            _asset('RAK_4631_repeater-v1.18.0-dev.7-filter-0e03f87e.bin',
-                image.length, 'filter-v1.18.0-dev.7'),
+            _asset('RAK_4631_repeater-v1.18.0-dev.7.bin',
+                image.length, 'v1.18.0-dev.7'),
           ],
         ),
       ]);
       final sums =
-          '$imageSha  Xiao_S3_WIO_repeater-v1.18.0-r4-filter-d1ebd2f.bin\n';
+          '$imageSha  Xiao_S3_WIO_repeater-v1.18.0-r4.bin\n';
 
       final source = GitHubSource(
         fetchJson: (url) async => jsonDecode(releasesJson),
@@ -118,15 +117,70 @@ void main() {
       expect(catalog.releases, hasLength(2));
 
       final stable =
-          catalog.releases.firstWhere((r) => r.tag == 'filter-v1.18.0-r4');
+          catalog.releases.firstWhere((r) => r.tag == 'v1.18.0-r4');
       expect(stable.appImages, hasLength(1)); // merged image excluded
       expect(stable.appImages.single.sha256, imageSha);
       expect(stable.isDevTrack, isFalse);
 
       final dev =
-          catalog.releases.firstWhere((r) => r.tag == 'filter-v1.18.0-dev.7');
+          catalog.releases.firstWhere((r) => r.tag == 'v1.18.0-dev.7');
       expect(dev.isDevTrack, isTrue);
       expect(dev.appImages.single.env, 'RAK_4631_repeater');
+    });
+
+    test('ignores retired filter-v releases and their assets', () async {
+      final releasesJson = jsonEncode([
+        _releaseJson(
+          tag: 'filter-v1.18.0-r4',
+          prerelease: false,
+          publishedAt: '2026-11-12T20:17:54Z',
+          assets: [
+            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4-filter-d1ebd2f.bin', 1,
+                'filter-v1.18.0-r4'),
+          ],
+        ),
+        _releaseJson(
+          tag: 'v1.18.0-r4',
+          prerelease: false,
+          publishedAt: '2026-11-13T20:17:54Z',
+          assets: [
+            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4.bin', 1, 'v1.18.0-r4'),
+          ],
+        ),
+      ]);
+      final source = GitHubSource(
+        fetchJson: (_) async => jsonDecode(releasesJson),
+        fetchBytes: (_) async => Uint8List(0),
+      );
+      final catalog = await source.catalog();
+      expect(catalog.releases.map((r) => r.tag), ['v1.18.0-r4']);
+      expect(catalog.releases.single.appImages.single.name,
+          'Xiao_S3_WIO_repeater-v1.18.0-r4.bin');
+    });
+
+    test('ignores a cache written with the old naming format', () async {
+      final dir = await Directory.systemTemp.createTemp('catalog_old_test');
+      final cacheFile = File('${dir.path}/catalog.json');
+      await cacheFile.writeAsString(jsonEncode({
+        'fetchedAt': DateTime.now().toIso8601String(),
+        'sumsAvailable': false,
+        'releases': [
+          {
+            'tag': 'filter-v1.18.0-r4',
+            'name': 'Filter Firmware v1.18.0-r4',
+            'prerelease': false,
+            'publishedAt': '2026-11-12T20:17:54Z',
+            'appImages': [],
+          },
+        ],
+      }));
+      final source = GitHubSource(
+        fetchJson: (_) => throw const SocketException('offline'),
+        fetchBytes: (_) async => Uint8List(0),
+        cacheFile: cacheFile,
+      );
+      await expectLater(source.catalog(), throwsA(isA<SocketException>()));
+      await dir.delete(recursive: true);
     });
 
     test('downloadAsset verifies sha256 when known and rejects mismatches',
@@ -134,7 +188,7 @@ void main() {
       final image = _imageBytes();
       final goodSha = sha256.convert(image).toString();
       final asset = FirmwareAsset.parse(
-        name: 'Xiao_S3_WIO_repeater-v1.18.0-r4-filter-d1ebd2f.bin',
+        name: 'Xiao_S3_WIO_repeater-v1.18.0-r4.bin',
         size: image.length,
         downloadUrl: 'https://example/image.bin',
         sha256: goodSha,
@@ -158,12 +212,12 @@ void main() {
       final image = _imageBytes();
       final releasesJson = jsonEncode([
         _releaseJson(
-          tag: 'filter-v1.18.0-r4',
+          tag: 'v1.18.0-r4',
           prerelease: false,
           publishedAt: '2026-11-12T20:17:54Z',
           assets: [
-            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4-filter-d1ebd2f.bin',
-                image.length, 'filter-v1.18.0-r4'),
+            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4.bin',
+                image.length, 'v1.18.0-r4'),
           ],
         ),
       ]);
@@ -183,7 +237,7 @@ void main() {
       );
       final cached = await offline.catalog();
       expect(cached.fromCache, isTrue);
-      expect(cached.releases.single.tag, 'filter-v1.18.0-r4');
+      expect(cached.releases.single.tag, 'v1.18.0-r4');
       await dir.delete(recursive: true);
     });
 
@@ -192,12 +246,12 @@ void main() {
       final cacheFile = File('${dir.path}/catalog.json');
       final releasesJson = jsonEncode([
         _releaseJson(
-          tag: 'filter-v1.18.0-r4',
+          tag: 'v1.18.0-r4',
           prerelease: false,
           publishedAt: '2026-11-12T20:17:54Z',
           assets: [
-            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4-filter-d1ebd2f.bin', 1,
-                'filter-v1.18.0-r4'),
+            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4.bin', 1,
+                'v1.18.0-r4'),
           ],
         ),
       ]);
@@ -225,7 +279,7 @@ void main() {
       final cached = await offline.catalog(cacheOnly: true);
       expect(fetched, isFalse);
       expect(cached.fromCache, isTrue);
-      expect(cached.releases.single.tag, 'filter-v1.18.0-r4');
+      expect(cached.releases.single.tag, 'v1.18.0-r4');
 
       final empty = GitHubSource(
         fetchJson: (_) async {

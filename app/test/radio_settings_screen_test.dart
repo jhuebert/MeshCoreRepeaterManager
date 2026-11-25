@@ -146,7 +146,7 @@ void main() {
     final lib = FakeLibrary();
     app.library = lib;
     final entry = lib.addImage(Uint8List.fromList(List.filled(120000, 3)),
-        env: 'Xiao_S3_WIO_repeater_observer', version: 'v1.1.0-rc5-cd72e1a2');
+        env: 'Xiao_S3_WIO_repeater_observer', version: 'v1.1.0-rc5');
     app.libraryEntries = await lib.list();
     await app.selectLibraryEntryForUpdate(entry);
 

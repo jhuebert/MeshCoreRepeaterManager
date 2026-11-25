@@ -6,6 +6,21 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ## [Unreleased]
 
+### Changed
+
+- **The app now uses the fork's new firmware release names.** Versions are
+  listed as `v<version>` instead of `filter-v<version>`, and release assets are
+  named `<env>-v<version>.bin` without the old `-filter-<sha>` suffix. Old
+  `filter` releases and assets are ignored. This does not change how updates
+  are computed: the repeater still hashes its own running image to build the
+  diff, so no old firmware file is needed on the device.
+- **Saved firmware with old names is deleted once on first launch.** Only
+  library entries whose version or file name contains the retired `filter`
+  marker are removed; imported files with ordinary names and the offline
+  setting are kept. A saved update is discarded only if it pointed at a
+  deleted image or used an old version label. Those versions must be
+  downloaded again.
+
 ## [1.1.1] - 2026-11-22
 
 later

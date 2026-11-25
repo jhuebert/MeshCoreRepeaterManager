@@ -26,14 +26,10 @@ class FirmwareAsset {
   /// asset name, e.g. `Xiao_S3_WIO_repeater`).
   final String env;
 
-  /// Version stamp as it appears in the asset name, e.g.
-  /// `v1.18.0-r4-filter-d1ebd2f` (the full FIRMWARE_VERSION with build
-  /// stamp). Matches `ota status`'s `running=` string byte for byte.
+  /// Version stamp as it appears in the asset name, e.g. `v1.18.0-r4`.
+  /// The fork's releases no longer append a build stamp, so this is also the
+  /// version shown in the UI and reported by `ota status`.
   final String version;
-
-  /// Version for display, e.g. `v1.18.0-r4` (`-filter-<sha>` stripped).
-  String get displayVersion =>
-      version.replaceFirst(RegExp(r'-filter-[0-9a-f]{7,}$'), '');
 
   final int size;
   final String downloadUrl;
@@ -49,9 +45,9 @@ class FirmwareAsset {
   // bootloader and would never land correctly in the inactive slot.
   static const _extension = '.bin';
 
-  /// Parse an asset name of the form `<env>-<version...>-filter-<sha>.bin`.
-  /// Returns null when it is not a firmware asset at all, or is a
-  /// `-merged.bin` (bootloader included) image.
+  /// Parse an asset name of the form `<env>-v<version>.bin`.
+  /// Returns null when it is not a firmware asset at all, is a `-merged.bin`
+  /// (bootloader included) image, or carries the retired `-filter-<sha>` name.
   static FirmwareAsset? parse({
     required String name,
     required int size,
@@ -60,6 +56,7 @@ class FirmwareAsset {
   }) {
     if (!name.endsWith(_extension)) return null;
     if (name.contains('-merged.')) return null; // never for OTA
+    if (name.toLowerCase().contains('filter')) return null; // retired naming
     final base = name.substring(0, name.length - _extension.length);
     final match = _versionRe.firstMatch(base);
     if (match == null) return null;
@@ -86,7 +83,7 @@ class FirmwareRelease {
     required this.appImages,
   });
 
-  /// Release tag, e.g. `filter-v1.18.0-r4` (stable) or `filter-v1.18.0-dev.7`.
+  /// Release tag, e.g. `v1.18.0-r4` (stable) or `v1.18.0-dev.7`.
   final String tag;
   final String name;
   final bool prerelease;
@@ -154,6 +151,10 @@ class GitHubSource {
   static final releasesUrl = Uri.parse(
       'https://api.github.com/repos/$_releaseRepo/releases?per_page=30');
 
+  /// Bumped when the cached naming scheme changes, so an old cache is ignored
+  /// instead of showing retired `filter-v*` releases offline.
+  static const int cacheFormat = 2;
+
   /// Default catalog: network first, cache fallback.
   ///
   /// [cacheOnly] never touches the network — the offline switch uses it, so a
@@ -202,6 +203,9 @@ class GitHubSource {
     final out = <UintedFirmwareRelease>[];
     for (final entry in json) {
       if (entry is! Map) continue;
+      final tag = entry['tag_name'] as String? ?? '?';
+      // The fork renamed its releases; retired tags must never reach the UI.
+      if (tag.toLowerCase().startsWith('filter-')) continue;
       final assets = (entry['assets'] as List?) ?? const [];
       final sumsAsset = assets.cast<Map?>().firstWhere(
             (a) => a != null && (a['name'] as String?) == 'SHA256SUMS.txt',
@@ -225,7 +229,7 @@ class GitHubSource {
       }
       out.add(UintedFirmwareRelease(
         release: FirmwareRelease(
-          tag: entry['tag_name'] as String? ?? '?',
+          tag: tag,
           name: entry['name'] as String? ?? '?',
           prerelease: entry['prerelease'] as bool? ?? false,
           publishedAt: entry['published_at'] as String? ?? '',
@@ -275,7 +279,7 @@ class GitHubSource {
     if (file == null || !await file.exists()) return null;
     try {
       final decoded = jsonDecode(await file.readAsString());
-      if (decoded is! Map) return null;
+      if (decoded is! Map || decoded['format'] != cacheFormat) return null;
       final releases = (decoded['releases'] as List? ?? const [])
           .whereType<Map>()
           .map(_releaseFromCacheJson)
@@ -298,6 +302,7 @@ class GitHubSource {
     if (file == null) return;
     try {
       final json = {
+        'format': cacheFormat,
         'fetchedAt': catalog.fetchedAt.toIso8601String(),
         'sumsAvailable': catalog.sumsAvailable,
         'releases': [
