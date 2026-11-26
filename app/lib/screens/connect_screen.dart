@@ -60,6 +60,26 @@ class _ConnectScreenState extends State<ConnectScreen> {
       _results = const [];
     });
     try {
+      // On macOS the system Bluetooth permission is reported separately from
+      // the platform exception a scan throws. Name it so the operator knows
+      // whether to change System Settings or try again.
+      final state = await FlutterBluePlus.adapterState.first;
+      if (state == BluetoothAdapterState.unauthorized) {
+        if (mounted) {
+          setState(() => _scanError =
+              'Bluetooth permission is off for this app. Allow it in System '
+              'Settings > Privacy & Security > Bluetooth, then restart the app.');
+        }
+        return;
+      }
+      if (state != BluetoothAdapterState.on) {
+        if (mounted) {
+          setState(() => _scanError = state == BluetoothAdapterState.off
+              ? 'Bluetooth is off on this Mac. Turn it on, then scan again.'
+              : 'Bluetooth is still starting up. Try again in a moment.');
+        }
+        return;
+      }
       await _scanSub?.cancel();
       _scanSub = FlutterBluePlus.scanResults.listen((results) {
         if (!mounted) return;
@@ -70,6 +90,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
         timeout: const Duration(seconds: 15),
       );
     } catch (e) {
+      debugPrint('BLE scan failed: $e');
       if (!mounted) return;
       setState(() {
         _scanError =
