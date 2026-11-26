@@ -41,7 +41,10 @@ accurate.
 - `packages/ota_core/` — the wire contract (op frames, CRC), the frozen `ota
   status` CLI-line parser, `OP_INFO` parsing, the delta engine (rolling-hash
   matcher), and the windowed transfer engine (REQ/RESPONSE, op retry from
-  `next_expected`).
+  `next_expected`). It also parses the frozen `ota net` line for observer
+  downloads.
+- `packages/wifi_ota_core/` — pure-Dart AsyncElegantOTA client with an
+  injectable HTTP client, MD5 helper and multipart upload. Original work, MIT.
 - `packages/mesh_protocol/` — pure-Dart protocol constants, codecs, identity,
   crypto, packet models/builders (MeshChameleon subtree).
 - `packages/device_link/` — pure-Dart `RadioLink` SPI, TCP/BLE/fake transports,
@@ -71,6 +74,17 @@ no previous image is needed on the device. Release version strings are labels
 for the offline library only, never diff inputs. `FirmwareLibrary.findBaseForSha`
 and `findBaseFor` are legacy helpers with no production caller; do not
 reintroduce a base picker or base matching.
+
+The Radio step also chooses among three update paths: LoRa (the original
+pipeline), the ESP32 update page over WiFi, and a direct download performed by
+an observer repeater. WiFi modes are mutually exclusive and are decided from
+read-only facts before `start ota` is sent, so the sign-in probe never opens a
+web server. A stock ESP32 repeater can take a WiFi hotspot update after a
+fallback sign-in that skips the OTA handshake; its result is a version match,
+not a hash match. Observer downloads use `ota fetch ver/sha/start` and `ota
+net`, then converge on the same `ota apply` commit as LoRa. The large
+repeater-management branch is reference work only; this line of work copies
+just the small WiFi helpers from it.
 
 Current fork release naming (no `filter`): tags and firmware stamps
 `v<version>`, titles `Firmware <version>`, app-slot assets

@@ -23,7 +23,8 @@ class ReviewScreen extends StatelessWidget {
     final status = app.nodeStatus;
     final imageBytes = app.selectedImage?.length ?? 0;
     final plan = app.radioPlan;
-    final planProblem = app.radioPlanProblem;
+    final usesRadio = app.otaMethod == OtaMethod.lora;
+    final planProblem = usesRadio ? app.radioPlanProblem : null;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Review update')),
@@ -64,8 +65,11 @@ class ReviewScreen extends StatelessWidget {
           InfoRow(label: 'Update to', value: app.selectedVersion ?? '?'),
           InfoRow(
               label: 'Image size', value: formatBytes(imageBytes), mono: false),
-          InfoRow(label: 'Radio', value: _radioLabel(app), mono: false),
-          if (plan.mode == RadioMode.liveMesh &&
+          InfoRow(label: 'Update via', value: _methodLabel(app), mono: false),
+          if (usesRadio)
+            InfoRow(label: 'Radio', value: _radioLabel(app), mono: false),
+          if (usesRadio &&
+              plan.mode == RadioMode.liveMesh &&
               !target.hasDirectRoute &&
               app.manualRoutePath.trim().isEmpty)
             const Padding(
@@ -114,6 +118,14 @@ class ReviewScreen extends StatelessWidget {
     }
     return 'Companion';
   }
+
+  String _methodLabel(AppState app) => switch (app.otaMethod) {
+        OtaMethod.lora => 'The mesh, on the channel below',
+        OtaMethod.onlineFetch => 'Downloaded by the repeater',
+        OtaMethod.wifi => app.wifiMode == WifiUploadMode.lan
+            ? 'WiFi, your network'
+            : 'WiFi, repeater hotspot',
+      };
 
   String _radioLabel(AppState app) {
     final plan = app.radioPlan;

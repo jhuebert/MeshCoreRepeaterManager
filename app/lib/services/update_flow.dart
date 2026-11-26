@@ -100,6 +100,39 @@ class UpdateFlow {
     }
   }
 
+  /// Arm the observer's direct download. Both inputs are mandatory on the
+  /// device; the app supplies the version token and the full SHA-256 of the
+  /// selected image. Replies are checked explicitly so a refused step cannot
+  /// be followed by a `start` that would download the wrong image.
+  Future<void> startOnlineFetch(
+      Contact target, String version, String shaHex) async {
+    final verReply = await _cli(target, 'ota fetch ver $version');
+    if (!RegExp(r'^OK - online version set ver=').hasMatch(verReply.trim())) {
+      throw UpdateFlowException('could not set the download version',
+          deviceReply: verReply);
+    }
+    final shaReply = await _cli(target, 'ota fetch sha sha256:$shaHex');
+    if (!RegExp(r'^OK - online sha set sha=').hasMatch(shaReply.trim())) {
+      throw UpdateFlowException('could not set the download SHA-256',
+          deviceReply: shaReply);
+    }
+    final startReply = await _cli(target, 'ota fetch start');
+    if (!RegExp(r'^OK - online fetch armed ver=').hasMatch(startReply.trim())) {
+      throw UpdateFlowException('the download was refused',
+          deviceReply: startReply);
+    }
+  }
+
+  /// Best-effort `ota net` progress read. Null when the node does not answer
+  /// or speaks an older CLI.
+  Future<WifiNetStatus?> netStatus(Contact target) async {
+    try {
+      return WifiNetStatus.parse(await _cli(target, 'ota net'));
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Ask the node which op sequence it expects next. This is the authority for
   /// a resumed transfer: the node applies ops strictly in order, so everything
   /// below this number has already been committed and must not be sent again.

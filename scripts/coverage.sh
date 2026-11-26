@@ -19,7 +19,7 @@ fi
 
 rm -rf coverage app/coverage
 
-for pkg in mesh_protocol device_link test_support companion_client ota_core; do
+for pkg in mesh_protocol device_link test_support companion_client ota_core wifi_ota_core; do
   echo "== coverage packages/$pkg =="
   (
     cd "packages/$pkg"

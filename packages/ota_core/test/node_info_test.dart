@@ -96,13 +96,15 @@ void main() {
             otaFeatBlockHash |
             otaFeatStagedHash |
             otaFeatStatus |
-            otaFeatPing))!;
+            otaFeatPing |
+            otaFeatOnlineFetch))!;
     expect(info.supportsDelta, isTrue);
     expect(info.supportsApply, isTrue);
     expect(info.supportsBlockHash, isTrue);
     expect(info.supportsStagedHash, isTrue);
     expect(info.supportsStatus, isTrue);
     expect(info.supportsPing, isTrue);
+    expect(info.supportsOnlineFetch, isTrue);
   });
 
   test('parseInfoReport tolerates crypto-layer zero padding', () {

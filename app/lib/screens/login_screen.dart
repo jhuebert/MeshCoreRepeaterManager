@@ -50,6 +50,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final status = app.nodeStatus;
     final board = app.detectedBoard;
     final radio2 = app.radio2Enabled;
+    final canWifiOnly =
+        status == null && app.wifiOnlyMode && app.wifiUploadSupported;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Sign in')),
@@ -109,6 +111,8 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
           if (app.probeError != null) ErrorBanner(app.probeError!),
+          if (status == null && app.boardReply != null)
+            InfoRow(label: 'Board', value: app.boardReply!, mono: false),
           if (status != null) ...[
             const SectionHeader('Node status'),
             Padding(
@@ -155,15 +159,20 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
       bottomNavigationBar: WizardFooter(
-        label: status == null ? 'Sign in' : 'Choose firmware',
+        label: status == null
+            ? (canWifiOnly ? 'WiFi update' : 'Sign in')
+            : 'Choose firmware',
         busy: app.probing,
         onPressed: status == null
             ? (app.probing || target == null ? null : () => _check(app))
             : () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const FirmwareScreen()),
                 ),
-        hint:
-            status == null && target == null ? 'Pick a repeater first.' : null,
+        hint: status == null && target == null
+            ? 'Pick a repeater first.'
+            : canWifiOnly
+                ? 'This firmware uses the built-in WiFi update page.'
+                : null,
       ),
     );
   }
@@ -172,7 +181,8 @@ class _LoginScreenState extends State<LoginScreen> {
     FocusScope.of(context).unfocus();
     await app.probe();
     if (!mounted) return;
-    if (app.nodeStatus != null) {
+    if (app.nodeStatus != null ||
+        (app.wifiOnlyMode && app.wifiUploadSupported)) {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const FirmwareScreen()),
       );

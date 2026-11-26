@@ -83,9 +83,7 @@ void main() {
     final app = _app();
     final lib = app.library as FakeLibrary;
     lib.addImage(Uint8List.fromList(List.filled(64, 3)),
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     app.libraryEntries = await lib.list();
 
     await tester.pumpWidget(wrap(app, const FirmwareScreen()));
@@ -143,9 +141,7 @@ void main() {
     app.nodeInfo = null;
     final lib = app.library as FakeLibrary;
     lib.addImage(Uint8List.fromList(List.filled(64, 1)),
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     lib.addImage(Uint8List.fromList(List.filled(64, 2)),
         env: 'RAK_4631_repeater',
         version: 'v1.1.0-rc5',
@@ -179,9 +175,7 @@ void main() {
     final app = _app();
     final lib = app.library as FakeLibrary;
     final running = lib.addImage(Uint8List.fromList(List.filled(64, 9)),
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     app.nodeStatus = nodeStatus(shaPrefix: running.sha256.substring(0, 16));
     app.nodeInfo = null; // no OP_INFO answer on sign-in
     lib.addImage(Uint8List.fromList(List.filled(64, 5)),
@@ -297,9 +291,7 @@ void main() {
     app.nodeInfo = nodeInfo(targetId: 0x12345678);
     final lib = app.library as FakeLibrary;
     lib.addImage(Uint8List.fromList(List.filled(64, 1)),
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     app.libraryEntries = await lib.list();
 
     await tester.pumpWidget(wrap(app, const FirmwareScreen()));
@@ -317,9 +309,7 @@ void main() {
     final app = _app();
     final lib = app.library as FakeLibrary;
     lib.addImage(Uint8List.fromList(List.filled(64, 3)),
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     app.libraryEntries = await lib.list();
 
     await tester.pumpWidget(wrap(app, const FirmwareScreen()));
@@ -355,9 +345,7 @@ void main() {
     final app = _app();
     final lib = app.library as FakeLibrary;
     lib.addImage(Uint8List.fromList(List.filled(64, 1)),
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     app.libraryEntries = await lib.list();
 
     await tester.pumpWidget(wrap(app, const FirmwareScreen()));
@@ -401,9 +389,7 @@ void main() {
     final app = _app();
     final lib = app.library as FakeLibrary;
     lib.addImage(Uint8List.fromList(List.filled(64, 1)),
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     lib.addImage(Uint8List.fromList(List.filled(64, 2)),
         env: 'RAK_4631_repeater',
         version: 'v1.1.0-rc5',

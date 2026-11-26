@@ -6,6 +6,25 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ## [Unreleased]
 
+### Added
+
+- **WiFi update methods on the Radio step.** An operator can now send the
+  chosen image through the repeater's built-in update page instead of over
+  LoRa. The app chooses between the repeater's `MeshCore-OTA` hotspot and the
+  repeater's own WiFi network from read-only answers, before starting the page.
+  The hotspot path also works on stock ESP32 repeaters, so a fork can be
+  installed without a site visit. The update page has no password, so only use
+  it on a network you trust.
+- **Direct download on observer repeaters.** Observer builds can fetch the
+  chosen release themselves from the internet using its version and SHA-256.
+  No image upload is needed; the repeater verifies the download and waits for
+  the usual Commit update step. The option appears only when the repeater
+  reports the feature and the selected release matches its build.
+- **Honest verification for stock WiFi updates.** Stock firmware cannot report
+  an image hash, so a WiFi update to a stock repeater reports a version match
+  and says plainly that the hash is unavailable. Roll back is hidden for WiFi
+  uploads because there is no verified spare slot.
+
 ### Changed
 
 - **The app now uses the fork's new firmware release names.** Versions are

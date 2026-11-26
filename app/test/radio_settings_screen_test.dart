@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore_repeater_manager/app_state.dart';
 import 'package:meshcore_repeater_manager/screens/radio_settings_screen.dart';
 import 'package:meshcore_repeater_manager/services/radio_plan.dart';
+import 'package:meshcore_repeater_manager/services/wifi_status.dart';
+import 'package:ota_core/ota_core.dart';
 
 import 'support.dart';
 
@@ -239,5 +241,71 @@ void main() {
         find.textContaining(
             'radio2 is paused while the private channel is in use'),
         findsOneWidget);
+  });
+
+  testWidgets('WiFi options stay hidden on an unsupported repeater',
+      (tester) async {
+    _bigView(tester);
+    final app = _app();
+    await tester.pumpWidget(wrap(app, const RadioSettingsScreen()));
+    await tester.pump();
+
+    expect(find.textContaining('Over WiFi'), findsNothing);
+    expect(find.text('Download on the repeater'), findsNothing);
+    expect(find.text('Over the mesh'), findsOneWidget);
+  });
+
+  testWidgets('an observer sees one WiFi path and the online option',
+      (tester) async {
+    _bigView(tester);
+    final app = _app();
+    app.nodeInfo = nodeInfo(
+        features: otaFeatDelta |
+            otaFeatApply |
+            otaFeatBlockHash |
+            otaFeatOnlineFetch);
+    app.wifiLink = WifiLinkState.disconnected;
+    await tester.pumpWidget(wrap(app, const RadioSettingsScreen()));
+    await tester.pump();
+
+    expect(find.text('Over WiFi, repeater hotspot'), findsOneWidget);
+    expect(find.text('Download on the repeater'), findsOneWidget);
+    await tester.tap(find.text('Download on the repeater'));
+    await tester.tap(find.text('Review'));
+    await tester.pumpAndSettle();
+    expect(app.otaMethod, OtaMethod.onlineFetch);
+  });
+
+  testWidgets('a connected observer offers the LAN path instead of hotspot',
+      (tester) async {
+    _bigView(tester);
+    final app = _app();
+    app.nodeInfo = nodeInfo(
+        features: otaFeatDelta |
+            otaFeatApply |
+            otaFeatBlockHash |
+            otaFeatOnlineFetch);
+    app.wifiLink = WifiLinkState.connected;
+    await tester.pumpWidget(wrap(app, const RadioSettingsScreen()));
+    await tester.pump();
+
+    expect(find.text('Over WiFi, your network'), findsOneWidget);
+    expect(find.text('Over WiFi, repeater hotspot'), findsNothing);
+  });
+
+  testWidgets('a WiFi choice bypasses an invalid radio plan', (tester) async {
+    _bigView(tester);
+    final app = _app(mode: RadioMode.radio2);
+    app.radioPlan = RadioPlan(mode: RadioMode.radio2, preset: _live);
+    app.nodeInfo = nodeInfo();
+    await tester.pumpWidget(wrap(app, const RadioSettingsScreen()));
+    await tester.pump();
+
+    expect(find.widgetWithText(FilledButton, 'Review'), findsOneWidget);
+    await tester.tap(find.text('Over WiFi, repeater hotspot'));
+    await tester.pump();
+    final review = tester
+        .widget<FilledButton>(find.widgetWithText(FilledButton, 'Review'));
+    expect(review.onPressed, isNotNull);
   });
 }

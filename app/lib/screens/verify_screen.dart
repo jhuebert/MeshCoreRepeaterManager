@@ -26,6 +26,10 @@ class _VerifyScreenState extends State<VerifyScreen> {
   @override
   void initState() {
     super.initState();
+    // A WiFi upload reboots the repeater itself. Verification already happened
+    // on Transfer, so there is no apply step to run here.
+    final method = context.read<AppState>().otaMethod;
+    if (method == OtaMethod.wifi) return;
     WidgetsBinding.instance.addPostFrameCallback((_) => _apply());
   }
 
@@ -68,6 +72,8 @@ class _VerifyScreenState extends State<VerifyScreen> {
     final app = context.watch<AppState>();
     final phase = app.updatePhase;
     final matched = app.verifyMatched;
+    final partial = app.verificationLevel == VerificationLevel.versionOnly;
+    final wifiUpload = app.otaMethod == OtaMethod.wifi;
     final stagedNotApplied =
         app.applyOutcome == ApplyOutcome.stagedNotApplied && !matched;
 
@@ -118,7 +124,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
                 app.rolledBack
                     ? 'Rolled back to the previous firmware'
                     : matched
-                        ? 'Update verified'
+                        ? (partial ? 'Firmware updated' : 'Update verified')
                         : stagedNotApplied
                             ? 'Update not committed'
                             : 'New firmware did not come up',
@@ -135,9 +141,13 @@ class _VerifyScreenState extends State<VerifyScreen> {
                       ? 'The repeater rebooted into the firmware it ran before '
                           'this update. Nothing was re-flashed.'
                       : matched
-                          ? 'The repeater came back on the new firmware. Its '
-                              'image matches the one that was sent. The update is '
-                              'complete.'
+                          ? (partial
+                              ? 'The repeater came back on the new version. '
+                                  'This firmware cannot report an image hash, '
+                                  'so this is a version match only.'
+                              : 'The repeater came back on the new firmware. Its '
+                                  'image matches the one that was sent. The update is '
+                                  'complete.')
                           : stagedNotApplied
                               ? 'The repeater is still holding the verified image '
                                   'in its spare slot. The apply command did not get '
@@ -165,19 +175,20 @@ class _VerifyScreenState extends State<VerifyScreen> {
             ),
           ],
           const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: OutlinedButton.icon(
-              // A rollback while apply/verify is still deciding would race the
-              // in-flight reboot: the outcome is not known yet.
-              onPressed: phase == UpdatePhase.applying ||
-                      phase == UpdatePhase.verifying
-                  ? null
-                  : () => _rollback(app),
-              icon: const Icon(backIcon),
-              label: const Text('Roll back'),
+          if (!wifiUpload)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: OutlinedButton.icon(
+                // A rollback while apply/verify is still deciding would race the
+                // in-flight reboot: the outcome is not known yet.
+                onPressed: phase == UpdatePhase.applying ||
+                        phase == UpdatePhase.verifying
+                    ? null
+                    : () => _rollback(app),
+                icon: const Icon(backIcon),
+                label: const Text('Roll back'),
+              ),
             ),
-          ),
           const SizedBox(height: 6),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),

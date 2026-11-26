@@ -24,9 +24,7 @@ Future<AppState> _app() async {
   final lib = FakeLibrary();
   // One downloaded version (both boards share the stamp, like real releases).
   lib.addImage(Uint8List.fromList(List.filled(64, 1)),
-      env: _board,
-      version: _stamp,
-      fileName: '$_board-$_stamp.bin');
+      env: _board, version: _stamp, fileName: '$_board-$_stamp.bin');
   lib.addImage(Uint8List.fromList(List.filled(64, 2)),
       env: 'RAK_4631_repeater',
       version: _stamp,

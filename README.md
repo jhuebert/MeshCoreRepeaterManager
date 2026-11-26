@@ -122,7 +122,23 @@ first time the app starts after this update, so download them again.
 
 ![Radio settings](docs/images/06-radio.png)
 
-A firmware transfer uses a lot of airtime, so choose where it runs:
+First choose how the update reaches the repeater:
+
+- **Over the mesh** sends the image on the channel you choose below. This is
+  the default and needs no WiFi.
+- **Over WiFi** uses the repeater's built-in update page. The app decides from
+  read-only answers whether the page will be on a `MeshCore-OTA` hotspot or on
+  the repeater's own WiFi network. Only one of those is offered at a time. On
+  Android, join a hotspot in your device settings; on desktop the app tries to
+  join it for you. This works on ESP32 repeaters, including stock firmware, and
+  is a quick way to install the fork on a repeater you can reach over WiFi.
+  The page has no password, so use it only on a network you trust.
+- **Download on the repeater** is offered on observer builds. The repeater
+  fetches the selected release itself using its version and SHA-256, verifies
+  it, and waits for the same Commit update step as a mesh transfer. No upload
+  from this device is needed.
+
+A firmware transfer over the mesh uses a lot of airtime, so choose where it runs:
 
 - **Live mesh**: use your normal channel and the saved path to the repeater.
   You can enter a different path.
@@ -290,6 +306,11 @@ a wrong file cannot be installed by mistake.
   board.
 - The companion is used as shipped. Relays on the path need no custom
   firmware.
+- A WiFi upload reboots the repeater as soon as the page accepts the image.
+  There is no verified spare slot to commit, so Roll back is not offered for
+  that method. The app verifies the running version, and a fork repeater also
+  confirms the image hash. Stock firmware cannot report a hash, so its result
+  is labelled as a version match only.
 
 ## Troubleshooting
 
@@ -304,6 +325,9 @@ a wrong file cannot be installed by mistake.
 | "the image did not pass verification" | The app could not match the repeater's current firmware to a file in your library (or the file is damaged). Pick the file the repeater runs, or send the whole file. |
 | The transfer stalls | A lost reply, not necessarily a lost update. Wait for the retry, or cancel and retry; the partial transfer is discarded safely. |
 | The repeater does not answer after the update | It may be switching back. Check again with the app; if it is back on the old version, the new firmware failed to start. |
+| "The repeater has no WiFi update page" | The board or build does not serve the update page, or WiFi update is disabled. Use the mesh method. |
+| "Join MeshCore-OTA in your device settings" | The repeater opened its hotspot. Join that network and tap Retry. To use your own network instead, go back to the Radio step and choose again. |
+| "the download failed" on an observer | The repeater could not reach its download source. Check its WiFi credentials and clock, then retry. |
 
 ## Screenshots
 

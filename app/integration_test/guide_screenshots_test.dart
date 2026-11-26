@@ -103,9 +103,7 @@ List<_Shot> _shots() {
   Future<void> seedLibrary(AppState app) async {
     final lib = app.library as fix.FakeLibrary;
     lib.addImage(Uint8List.fromList(List<int>.filled(1449824, 1)),
-        env: _board,
-        version: _stamp,
-        fileName: '$_board-$_stamp.bin');
+        env: _board, version: _stamp, fileName: '$_board-$_stamp.bin');
     lib.addImage(Uint8List.fromList(List<int>.filled(1449824, 2)),
         env: 'RAK_4631_repeater',
         version: _stamp,

@@ -38,6 +38,7 @@ class _RadioSettingsScreenState extends State<RadioSettingsScreen> {
     500000,
   ];
 
+  late OtaMethod _method;
   late RadioMode _mode;
   late final TextEditingController _frequency;
   late final TextEditingController _route;
@@ -49,6 +50,7 @@ class _RadioSettingsScreenState extends State<RadioSettingsScreen> {
   void initState() {
     super.initState();
     final app = context.read<AppState>();
+    _method = app.otaMethod;
     _mode = app.radioPlan.mode;
     final suggested =
         app.radioPlan.preset ?? app.suggestedRadioPreset() ?? app.livePreset;
@@ -72,9 +74,11 @@ class _RadioSettingsScreenState extends State<RadioSettingsScreen> {
     final app = context.watch<AppState>();
     final live = app.livePreset;
     final plan = _planFromFields(app);
-    final problem = plan.error(primary: live);
-    final routeInvalid =
-        _mode == RadioMode.liveMesh && app.manualRouteError != null;
+    final usesRadio = _method == OtaMethod.lora;
+    final problem = usesRadio ? plan.error(primary: live) : null;
+    final routeInvalid = usesRadio &&
+        _mode == RadioMode.liveMesh &&
+        app.manualRouteError != null;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Radio settings')),
@@ -82,209 +86,272 @@ class _RadioSettingsScreenState extends State<RadioSettingsScreen> {
         padding: const EdgeInsets.only(bottom: 24),
         children: [
           const WizardBar(step: 5, label: 'Radio settings'),
-          const SectionHeader('Where the update runs'),
-          RadioGroup<RadioMode>(
-            groupValue: _mode,
-            onChanged: (value) => setState(() => _mode = value ?? _mode),
+          const SectionHeader('How the update reaches the repeater'),
+          RadioGroup<OtaMethod>(
+            groupValue: _method,
+            onChanged: (value) => setState(() => _method = value ?? _method),
             child: Column(
               children: [
-                _modeTile(
-                  RadioMode.liveMesh,
-                  'Live mesh',
-                  live == null
-                      ? 'Use the normal mesh channel and the route the companion has.'
-                      : 'Normal mesh channel (${live.label}) and the saved DIRECT route.',
+                _methodTile(
+                  OtaMethod.lora,
+                  'Over the mesh',
+                  'Send the image on the channel chosen below.',
                 ),
-                _modeTile(
-                  RadioMode.tempRadio,
-                  'Temporary private channel',
-                  'Move the repeater and the companion to a private preset for the '
-                      'transfer, then put both back. The channel renews itself '
-                      'during the update. Zero-hop: no relay is there.',
-                ),
-                _modeTile(
-                  RadioMode.radio2,
-                  'The repeater\'s second preset',
-                  'Keep the live mesh on its channel and send the transfer on the '
-                      'repeater\'s radio2 preset. Zero-hop on the secondary. '
-                      'The repeater shares the radio with the live mesh.',
-                ),
+                if (app.wifiUploadSupported)
+                  _methodTile(
+                    OtaMethod.wifi,
+                    app.wifiMode == WifiUploadMode.lan
+                        ? 'Over WiFi, your network'
+                        : 'Over WiFi, repeater hotspot',
+                    app.wifiMode == WifiUploadMode.lan
+                        ? 'The repeater serves the update page on its WiFi '
+                            'address. This device must be on the same network.'
+                        : 'The repeater opens a MeshCore-OTA network. Join it '
+                            'on this device, then upload directly. ESP32 only.',
+                  ),
+                if (app.onlineFetchSupported)
+                  _methodTile(
+                    OtaMethod.onlineFetch,
+                    'Download on the repeater',
+                    'The repeater fetches the chosen version itself. Needs an '
+                        'observer build and WiFi credentials on the repeater.',
+                  ),
               ],
             ),
           ),
-          if (_mode == RadioMode.liveMesh) ...[
-            const SectionHeader('Direct path'),
+          if (!usesRadio) ...[
+            const SectionHeader('This update'),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
-              child: TextField(
-                controller: _route,
-                autocorrect: false,
-                enableSuggestions: false,
-                decoration: InputDecoration(
-                  labelText: 'Direct path override (optional)',
-                  hintText: 'c0ff, c0c0',
-                  helperText:
-                      'Comma-separated hash hops. Empty keeps the saved route.',
-                  errorText: app.manualRouteError,
-                  border: const OutlineInputBorder(),
-                ),
-                onChanged: app.setManualRoutePath,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                _method == OtaMethod.wifi
+                    ? 'The radio plan below does not apply. The upload goes '
+                        'over WiFi and the repeater reboots when it finishes.'
+                    : 'The radio plan below does not apply. The repeater '
+                        'downloads and verifies the image before you commit it.',
+                style: const TextStyle(
+                    color: OtaTheme.textMuted, fontSize: 12, height: 1.4),
               ),
             ),
+            if (_method == OtaMethod.onlineFetch) ...[
+              const SizedBox(height: 8),
+              InfoRow(
+                  label: 'Version',
+                  value: app.selectedVersion ?? 'not chosen',
+                  mono: false),
+              InfoRow(
+                  label: 'SHA-256',
+                  value: app.selectedSha256 ?? 'not available',
+                  mono: false),
+            ],
           ],
-          if (_mode != RadioMode.liveMesh) ...[
-            const SectionHeader('Private preset'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (live != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Text(
-                            'Live preset: ${live.label}. The private preset must '
-                            'stay clear of it${_mode == RadioMode.radio2 ? ' (the second preset must use a different band)' : ''}.',
+          if (usesRadio) ...[
+            const SectionHeader('Where the update runs'),
+            RadioGroup<RadioMode>(
+              groupValue: _mode,
+              onChanged: (value) => setState(() => _mode = value ?? _mode),
+              child: Column(
+                children: [
+                  _modeTile(
+                    RadioMode.liveMesh,
+                    'Live mesh',
+                    live == null
+                        ? 'Use the normal mesh channel and the route the companion has.'
+                        : 'Normal mesh channel (${live.label}) and the saved DIRECT route.',
+                  ),
+                  _modeTile(
+                    RadioMode.tempRadio,
+                    'Temporary private channel',
+                    'Move the repeater and the companion to a private preset for the '
+                        'transfer, then put both back. The channel renews itself '
+                        'during the update. Zero-hop: no relay is there.',
+                  ),
+                  _modeTile(
+                    RadioMode.radio2,
+                    'The repeater\'s second preset',
+                    'Keep the live mesh on its channel and send the transfer on the '
+                        'repeater\'s radio2 preset. Zero-hop on the secondary. '
+                        'The repeater shares the radio with the live mesh.',
+                  ),
+                ],
+              ),
+            ),
+            if (_mode == RadioMode.liveMesh) ...[
+              const SectionHeader('Direct path'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+                child: TextField(
+                  controller: _route,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: InputDecoration(
+                    labelText: 'Direct path override (optional)',
+                    hintText: 'c0ff, c0c0',
+                    helperText:
+                        'Comma-separated hash hops. Empty keeps the saved route.',
+                    errorText: app.manualRouteError,
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: app.setManualRoutePath,
+                ),
+              ),
+            ],
+            if (_mode != RadioMode.liveMesh) ...[
+              const SectionHeader('Private preset'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (live != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Text(
+                              'Live preset: ${live.label}. The private preset must '
+                              'stay clear of it${_mode == RadioMode.radio2 ? ' (the second preset must use a different band)' : ''}.',
+                              style: const TextStyle(
+                                  color: OtaTheme.textMuted,
+                                  fontSize: 11,
+                                  height: 1.4),
+                            ),
+                          ),
+                        if (_usesExistingRadio2(app)) ...[
+                          Text(
+                            'Using the repeater\'s current radio2 preset: '
+                            '${app.radio2Preset!.label}. The node\'s radio2 '
+                            'configuration is left unchanged.',
                             style: const TextStyle(
-                                color: OtaTheme.textMuted,
+                                color: OtaTheme.accent, fontSize: 12),
+                          ),
+                        ] else ...[
+                          TextField(
+                            controller: _frequency,
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'[0-9.]')),
+                            ],
+                            decoration: const InputDecoration(
+                              labelText: 'Frequency (MHz)',
+                              isDense: true,
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                          const SizedBox(height: 10),
+                          DropdownButtonFormField<int>(
+                            key: ValueKey('bw$_bandwidthHz'),
+                            initialValue: _bandwidthHz,
+                            decoration: const InputDecoration(
+                              labelText: 'Bandwidth (kHz)',
+                              isDense: true,
+                            ),
+                            items: [
+                              for (final hz in _bandwidthItems())
+                                DropdownMenuItem(
+                                    value: hz, child: Text(_fmt(hz / 1000))),
+                            ],
+                            onChanged: (v) => setState(
+                                () => _bandwidthHz = v ?? _bandwidthHz),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<int>(
+                                  key: ValueKey('sf$_spreadingFactor'),
+                                  initialValue: _spreadingFactor,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Spreading factor',
+                                    isDense: true,
+                                  ),
+                                  items: [
+                                    for (var sf = 5; sf <= 12; sf++)
+                                      DropdownMenuItem(
+                                          value: sf, child: Text('SF$sf')),
+                                  ],
+                                  onChanged: (v) =>
+                                      setState(() => _spreadingFactor = v ?? 7),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: DropdownButtonFormField<int>(
+                                  key: ValueKey('cr$_codingRate'),
+                                  initialValue: _codingRate,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Coding rate',
+                                    isDense: true,
+                                  ),
+                                  items: [
+                                    for (var cr = 5; cr <= 8; cr++)
+                                      DropdownMenuItem(
+                                          value: cr, child: Text('4/$cr')),
+                                  ],
+                                  onChanged: (v) =>
+                                      setState(() => _codingRate = v ?? 5),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Preset: ${_presetFromFields(app).label}',
+                            style: const TextStyle(
+                                color: OtaTheme.textMuted, fontSize: 11),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Started from the repeater’s own settings. Change '
+                            'them here if you need to.',
+                            style: TextStyle(
+                                color: OtaTheme.textMuted, fontSize: 11),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'The repeater keeps the private channel on for '
+                          '${RadioPlan.tempRadioChunkMinutes}-minute chunks and '
+                          'renews it automatically while the update runs.',
+                          style: const TextStyle(
+                              color: OtaTheme.textMuted,
+                              fontSize: 11,
+                              height: 1.4),
+                        ),
+                        if (_mode == RadioMode.tempRadio &&
+                            app.radio2Enabled == true) ...[
+                          const SizedBox(height: 8),
+                          const Text(
+                            'The repeater\'s radio2 is paused while the private '
+                            'channel is in use, and restored afterwards.',
+                            style: TextStyle(
+                                color: OtaTheme.warn,
                                 fontSize: 11,
                                 height: 1.4),
                           ),
-                        ),
-                      if (_usesExistingRadio2(app)) ...[
-                        Text(
-                          'Using the repeater\'s current radio2 preset: '
-                          '${app.radio2Preset!.label}. The node\'s radio2 '
-                          'configuration is left unchanged.',
-                          style: const TextStyle(
-                              color: OtaTheme.accent, fontSize: 12),
-                        ),
-                      ] else ...[
-                        TextField(
-                          controller: _frequency,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                                RegExp(r'[0-9.]')),
-                          ],
-                          decoration: const InputDecoration(
-                            labelText: 'Frequency (MHz)',
-                            isDense: true,
-                          ),
-                          onChanged: (_) => setState(() {}),
-                        ),
-                        const SizedBox(height: 10),
-                        DropdownButtonFormField<int>(
-                          key: ValueKey('bw$_bandwidthHz'),
-                          initialValue: _bandwidthHz,
-                          decoration: const InputDecoration(
-                            labelText: 'Bandwidth (kHz)',
-                            isDense: true,
-                          ),
-                          items: [
-                            for (final hz in _bandwidthItems())
-                              DropdownMenuItem(
-                                  value: hz, child: Text(_fmt(hz / 1000))),
-                          ],
-                          onChanged: (v) =>
-                              setState(() => _bandwidthHz = v ?? _bandwidthHz),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DropdownButtonFormField<int>(
-                                key: ValueKey('sf$_spreadingFactor'),
-                                initialValue: _spreadingFactor,
-                                decoration: const InputDecoration(
-                                  labelText: 'Spreading factor',
-                                  isDense: true,
-                                ),
-                                items: [
-                                  for (var sf = 5; sf <= 12; sf++)
-                                    DropdownMenuItem(
-                                        value: sf, child: Text('SF$sf')),
-                                ],
-                                onChanged: (v) =>
-                                    setState(() => _spreadingFactor = v ?? 7),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: DropdownButtonFormField<int>(
-                                key: ValueKey('cr$_codingRate'),
-                                initialValue: _codingRate,
-                                decoration: const InputDecoration(
-                                  labelText: 'Coding rate',
-                                  isDense: true,
-                                ),
-                                items: [
-                                  for (var cr = 5; cr <= 8; cr++)
-                                    DropdownMenuItem(
-                                        value: cr, child: Text('4/$cr')),
-                                ],
-                                onChanged: (v) =>
-                                    setState(() => _codingRate = v ?? 5),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Preset: ${_presetFromFields(app).label}',
-                          style: const TextStyle(
-                              color: OtaTheme.textMuted, fontSize: 11),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Started from the repeater’s own settings. Change '
-                          'them here if you need to.',
-                          style: TextStyle(
-                              color: OtaTheme.textMuted, fontSize: 11),
-                        ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'The repeater keeps the private channel on for '
-                        '${RadioPlan.tempRadioChunkMinutes}-minute chunks and '
-                        'renews it automatically while the update runs.',
-                        style: const TextStyle(
-                            color: OtaTheme.textMuted,
-                            fontSize: 11,
-                            height: 1.4),
-                      ),
-                      if (_mode == RadioMode.tempRadio &&
-                          app.radio2Enabled == true) ...[
-                        const SizedBox(height: 8),
-                        const Text(
-                          'The repeater\'s radio2 is paused while the private '
-                          'channel is in use, and restored afterwards.',
-                          style: TextStyle(
-                              color: OtaTheme.warn, fontSize: 11, height: 1.4),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            if (_mode == RadioMode.radio2) _radio2Note(app),
+              if (_mode == RadioMode.radio2) _radio2Note(app),
+            ],
           ],
           if (problem != null)
             Padding(
@@ -311,6 +378,26 @@ class _RadioSettingsScreenState extends State<RadioSettingsScreen> {
             ? null
             : () => _saveAndContinue(app, plan),
         hint: routeInvalid ? 'Fix the direct path override above.' : null,
+      ),
+    );
+  }
+
+  Widget _methodTile(
+    OtaMethod method,
+    String title,
+    String subtitle,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+      child: Card(
+        color: _method == method ? OtaTheme.surfaceHigh : null,
+        child: RadioListTile<OtaMethod>(
+          value: method,
+          title: Text(title),
+          subtitle: Text(subtitle,
+              style: const TextStyle(
+                  color: OtaTheme.textMuted, fontSize: 11, height: 1.35)),
+        ),
       ),
     );
   }
@@ -396,6 +483,7 @@ class _RadioSettingsScreenState extends State<RadioSettingsScreen> {
       );
 
   void _saveAndContinue(AppState app, RadioPlan plan) {
+    app.setOtaMethod(_method);
     app.setRadioMode(_mode);
     if (_mode != RadioMode.liveMesh) {
       app.setRadioPreset(_presetFromFields(app));

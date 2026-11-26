@@ -82,10 +82,10 @@ void main() {
           prerelease: false,
           publishedAt: '2026-11-12T20:17:54Z',
           assets: [
-            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4.bin',
-                image.length, 'v1.18.0-r4'),
-            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4-merged.bin',
-                9000000, 'v1.18.0-r4'),
+            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4.bin', image.length,
+                'v1.18.0-r4'),
+            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4-merged.bin', 9000000,
+                'v1.18.0-r4'),
             _asset('SHA256SUMS.txt', 10, 'v1.18.0-r4'),
           ],
         ),
@@ -94,13 +94,12 @@ void main() {
           prerelease: true,
           publishedAt: '2026-11-10T19:16:00Z',
           assets: [
-            _asset('RAK_4631_repeater-v1.18.0-dev.7.bin',
-                image.length, 'v1.18.0-dev.7'),
+            _asset('RAK_4631_repeater-v1.18.0-dev.7.bin', image.length,
+                'v1.18.0-dev.7'),
           ],
         ),
       ]);
-      final sums =
-          '$imageSha  Xiao_S3_WIO_repeater-v1.18.0-r4.bin\n';
+      final sums = '$imageSha  Xiao_S3_WIO_repeater-v1.18.0-r4.bin\n';
 
       final source = GitHubSource(
         fetchJson: (url) async => jsonDecode(releasesJson),
@@ -116,14 +115,12 @@ void main() {
       expect(catalog.sumsAvailable, isTrue);
       expect(catalog.releases, hasLength(2));
 
-      final stable =
-          catalog.releases.firstWhere((r) => r.tag == 'v1.18.0-r4');
+      final stable = catalog.releases.firstWhere((r) => r.tag == 'v1.18.0-r4');
       expect(stable.appImages, hasLength(1)); // merged image excluded
       expect(stable.appImages.single.sha256, imageSha);
       expect(stable.isDevTrack, isFalse);
 
-      final dev =
-          catalog.releases.firstWhere((r) => r.tag == 'v1.18.0-dev.7');
+      final dev = catalog.releases.firstWhere((r) => r.tag == 'v1.18.0-dev.7');
       expect(dev.isDevTrack, isTrue);
       expect(dev.appImages.single.env, 'RAK_4631_repeater');
     });
@@ -216,8 +213,8 @@ void main() {
           prerelease: false,
           publishedAt: '2026-11-12T20:17:54Z',
           assets: [
-            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4.bin',
-                image.length, 'v1.18.0-r4'),
+            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4.bin', image.length,
+                'v1.18.0-r4'),
           ],
         ),
       ]);
@@ -250,8 +247,7 @@ void main() {
           prerelease: false,
           publishedAt: '2026-11-12T20:17:54Z',
           assets: [
-            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4.bin', 1,
-                'v1.18.0-r4'),
+            _asset('Xiao_S3_WIO_repeater-v1.18.0-r4.bin', 1, 'v1.18.0-r4'),
           ],
         ),
       ]);

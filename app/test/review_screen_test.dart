@@ -91,9 +91,7 @@ void reviewSummaryTests() {
     final lib = FakeLibrary();
     app.library = lib;
     lib.addImage(Uint8List.fromList(List.filled(64, 7)),
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     app.libraryEntries = await lib.list();
     await app.selectLibraryEntryForUpdate(app.libraryEntries.single);
     app.remoteDiff = remoteDiff();
@@ -276,5 +274,18 @@ void reviewSummaryTests() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Step 7 of 8'), findsOneWidget);
+  });
+
+  testWidgets('the review shows the chosen update method', (tester) async {
+    _bigView(tester);
+    final app = _app(mode: RadioMode.tempRadio)
+      ..nodeStatus = nodeStatus()
+      ..otaMethod = OtaMethod.wifi;
+    await tester.pumpWidget(wrap(app, const ReviewScreen()));
+    await tester.pump();
+
+    expect(find.text('Update via'), findsOneWidget);
+    expect(find.text('WiFi, repeater hotspot'), findsOneWidget);
+    expect(find.text('Radio'), findsNothing);
   });
 }

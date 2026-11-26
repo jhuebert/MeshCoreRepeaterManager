@@ -68,7 +68,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
         if (mounted) {
           setState(() => _scanError =
               'Bluetooth permission is off for this app. Allow it in System '
-              'Settings > Privacy & Security > Bluetooth, then restart the app.');
+                  'Settings > Privacy & Security > Bluetooth, then restart the app.');
         }
         return;
       }

@@ -161,14 +161,12 @@ void main() {
 
     expect(
       await library.findBaseFor(
-          env: 'Xiao_S3_WIO_repeater',
-          runningVersion: 'v1.18.0-dev.7'),
+          env: 'Xiao_S3_WIO_repeater', runningVersion: 'v1.18.0-dev.7'),
       isNull,
     );
     expect(
       await library.findBaseFor(
-          env: 'RAK_4631_repeater',
-          runningVersion: 'v1.18.0-r4'),
+          env: 'RAK_4631_repeater', runningVersion: 'v1.18.0-r4'),
       isNull,
     );
   });

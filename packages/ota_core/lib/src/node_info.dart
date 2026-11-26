@@ -41,6 +41,10 @@ const otaFeatStatus = 0x00000010;
 /// `features` bit: the node answers `OP_PING` (link echo over the op path).
 const otaFeatPing = 0x00000020;
 
+/// `features` bit: the node can download a release itself over WiFi. Only
+/// ESP32 observer builds set it (fork's `OTA_FEAT_ONLINE_FETCH`).
+const otaFeatOnlineFetch = 0x00000040;
+
 /// Field offsets of the frozen identity block shared with OP_STATUS_REPORT.
 const infoWireVerOff = 0;
 const infoTargetOff = 1;
@@ -95,6 +99,7 @@ class OtaNodeInfo {
   bool get supportsStagedHash => features & otaFeatStagedHash != 0;
   bool get supportsStatus => features & otaFeatStatus != 0;
   bool get supportsPing => features & otaFeatPing != 0;
+  bool get supportsOnlineFetch => features & otaFeatOnlineFetch != 0;
 }
 
 /// `OP_INFO` query frame.

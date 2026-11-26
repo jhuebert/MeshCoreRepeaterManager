@@ -4,6 +4,7 @@ library;
 
 export 'src/wire.dart';
 export 'src/ota_status.dart';
+export 'src/wifi_ota_status.dart';
 export 'src/delta.dart';
 export 'src/node_info.dart';
 export 'src/node_status.dart';

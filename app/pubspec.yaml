@@ -30,6 +30,8 @@ dependencies:
     path: ../packages/companion_client
   ota_core:
     path: ../packages/ota_core
+  wifi_ota_core:
+    path: ../packages/wifi_ota_core
   file_selector: ^1.1.0
 
 dev_dependencies:

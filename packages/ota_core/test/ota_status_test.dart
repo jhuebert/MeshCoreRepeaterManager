@@ -94,6 +94,9 @@ void main() {
       expect(otaErrLabel(0), 'OK');
       expect(otaErrLabel(1), isNot('OK'));
       expect(otaErrLabel(7), contains('token'));
+      for (var code = 10; code <= 16; code++) {
+        expect(otaErrLabel(code), isNot(contains('unknown')));
+      }
       expect(otaErrLabel(123), contains('123'));
     });
   });

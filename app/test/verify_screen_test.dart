@@ -67,4 +67,30 @@ void main() {
     );
     expect(button.onPressed, isNull);
   });
+
+  testWidgets('a WiFi upload does not run a second apply', (tester) async {
+    final app = AppState()
+      ..otaMethod = OtaMethod.wifi
+      ..updatePhase = UpdatePhase.done
+      ..verifyMatched = true;
+    await pumpVerify(tester, app);
+
+    expect(find.text('Update verified'), findsOneWidget);
+    expect(find.text('Roll back'), findsNothing);
+    expect(find.textContaining('Node is rebooting'), findsNothing);
+  });
+
+  testWidgets('a version-only result is not called a hash match',
+      (tester) async {
+    final app = AppState()
+      ..otaMethod = OtaMethod.wifi
+      ..updatePhase = UpdatePhase.done
+      ..verifyMatched = true
+      ..verificationLevel = VerificationLevel.versionOnly;
+    await pumpVerify(tester, app);
+
+    expect(find.text('Firmware updated'), findsOneWidget);
+    expect(find.text('Update verified'), findsNothing);
+    expect(find.textContaining('version match only'), findsOneWidget);
+  });
 }

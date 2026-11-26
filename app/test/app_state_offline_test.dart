@@ -85,9 +85,7 @@ void main() {
     final lib = FakeLibrary();
     final image = Uint8List.fromList(List.filled(96, 7));
     final entry = lib.addImage(image,
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     app.library = lib;
     app.libraryEntries = await lib.list();
 
@@ -121,9 +119,7 @@ void main() {
     final app = AppState();
     final lib = FakeLibrary();
     lib.addImage(Uint8List.fromList(List.filled(16, 1)),
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     lib.addImage(Uint8List.fromList(List.filled(16, 2)),
         env: 'RAK_4631_repeater',
         version: 'v1.1.0-rc5',
@@ -213,9 +209,7 @@ void main() {
         origin: 'import');
     final updateImage = Uint8List.fromList(List.filled(64, 4));
     final update = lib.addImage(updateImage,
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     app.library = lib;
     app.libraryEntries = await lib.list();
     app.nodeStatus = nodeStatus();
@@ -234,13 +228,9 @@ void main() {
     final app = AppState();
     final lib = FakeLibrary();
     final first = lib.addImage(Uint8List.fromList(List.filled(64, 4)),
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     final second = lib.addImage(Uint8List.fromList(List.filled(64, 5)),
-        env: _board,
-        version: 'v1.1.0-rc6',
-        fileName: '$_board-v1.1.0-rc6.bin');
+        env: _board, version: 'v1.1.0-rc6', fileName: '$_board-v1.1.0-rc6.bin');
     app.library = lib;
     app.libraryEntries = await lib.list();
     app.remoteDiff = remoteDiff();
@@ -256,9 +246,7 @@ void main() {
     final app = AppState();
     final lib = FakeLibrary();
     lib.addImage(Uint8List.fromList(List.filled(16, 1)),
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     lib.addImage(Uint8List.fromList(List.filled(16, 2)),
         env: 'custom',
         version: 'custom',
@@ -275,9 +263,7 @@ void main() {
     final app = AppState();
     final lib = FakeLibrary();
     final update = lib.addImage(Uint8List.fromList(List.filled(64, 4)),
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     app.library = lib;
     app.libraryEntries = await lib.list();
     await app.selectLibraryEntryForUpdate(update);
@@ -296,9 +282,7 @@ void main() {
     final app = AppState();
     final lib = FakeLibrary();
     final update = lib.addImage(Uint8List.fromList(List.filled(64, 4)),
-        env: _board,
-        version: 'v1.1.0-rc5',
-        fileName: '$_board-v1.1.0-rc5.bin');
+        env: _board, version: 'v1.1.0-rc5', fileName: '$_board-v1.1.0-rc5.bin');
     app.library = lib;
     app.libraryEntries = await lib.list();
     await app.selectLibraryEntryForUpdate(update);

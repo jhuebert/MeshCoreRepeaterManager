@@ -120,8 +120,16 @@ class _TransferScreenState extends State<TransferScreen> {
     final progress = app.progress;
     final phase = app.updatePhase;
     final target = app.target;
+    final method = app.otaMethod;
+    final net = app.onlineNetStatus;
     final terminal = phase == UpdatePhase.upToDate;
-    final fraction = terminal ? 1.0 : (progress?.fraction ?? 0.0);
+    final fraction = terminal
+        ? 1.0
+        : method == OtaMethod.wifi
+            ? app.wifiProgress
+            : method == OtaMethod.onlineFetch && net != null && net.size > 0
+                ? (net.received / net.size).clamp(0.0, 1.0)
+                : (progress?.fraction ?? 0.0);
     final totalBytes = app.remoteDiff?.literalBytes ??
         app.selectedImage?.length ??
         progress?.literalBytesSent ??
@@ -183,14 +191,7 @@ class _TransferScreenState extends State<TransferScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  terminal
-                      ? 'Already up to date. Nothing was staged.'
-                      : progress == null
-                          ? 'Getting ready…'
-                          : '${formatBytes(progress.literalBytesSent)} / '
-                              '${formatBytes(totalBytes < progress.literalBytesSent ? progress.literalBytesSent : totalBytes)} sent · '
-                              '${progress.retries} re-sends'
-                              '${_etaSuffix(progress)}',
+                  _statusText(app, phase, fraction, progress, totalBytes),
                   style:
                       const TextStyle(color: OtaTheme.textMuted, fontSize: 12),
                 ),
@@ -227,47 +228,7 @@ class _TransferScreenState extends State<TransferScreen> {
             ),
           ],
           const SectionHeader('Steps'),
-          _stepRow(
-            label: 'Compare with repeater',
-            state: _stepDone(UpdatePhase.comparing, phase)
-                ? _StepState.ok
-                : phase == UpdatePhase.comparing
-                    ? _StepState.active
-                    : _StepState.pending,
-          ),
-          _stepRow(
-            label: 'Stage image',
-            state: _stepDone(UpdatePhase.staging, phase)
-                ? _StepState.ok
-                : phase == UpdatePhase.staging
-                    ? _StepState.active
-                    : _StepState.pending,
-          ),
-          _stepRow(
-            label: 'Transfer',
-            state: _stepDone(UpdatePhase.readyToApply, phase)
-                ? _StepState.ok
-                : phase == UpdatePhase.transferring
-                    ? _StepState.active
-                    : _StepState.pending,
-            // A pie-style ring tracks the real op progress while transferring.
-            value: phase == UpdatePhase.transferring ? fraction : null,
-          ),
-          _stepRow(
-            label: 'Verify the image',
-            state: _stepDone(UpdatePhase.readyToApply, phase)
-                ? _StepState.ok
-                : _StepState.pending,
-          ),
-          _stepRow(
-            label: 'Commit update',
-            state: _stepDone(UpdatePhase.verifying, phase)
-                ? _StepState.ok
-                : phase == UpdatePhase.applying ||
-                        phase == UpdatePhase.readyToApply
-                    ? _StepState.active
-                    : _StepState.pending,
-          ),
+          ..._steps(app, phase, fraction),
           if (_stopped) ...[
             Card(
               margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -347,7 +308,7 @@ class _TransferScreenState extends State<TransferScreen> {
             ),
           ],
           if (_error != null) ErrorBanner(_error!),
-          if (phase == UpdatePhase.failed)
+          if (phase == UpdatePhase.failed && method == OtaMethod.lora)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
               child: OutlinedButton.icon(
@@ -395,6 +356,88 @@ class _TransferScreenState extends State<TransferScreen> {
     );
   }
 
+  List<Widget> _steps(AppState app, UpdatePhase phase, double fraction) {
+    Widget row(String label, UpdatePhase doneAt,
+            {UpdatePhase? activeAt, double? value}) =>
+        _stepRow(
+          label: label,
+          state: _stepDone(doneAt, phase)
+              ? _StepState.ok
+              : (activeAt != null && phase == activeAt)
+                  ? _StepState.active
+                  : _StepState.pending,
+          value: value,
+        );
+    if (app.otaMethod == OtaMethod.wifi) {
+      return [
+        row('Open update page', UpdatePhase.staging,
+            activeAt: UpdatePhase.staging),
+        row('Upload over WiFi', UpdatePhase.verifying,
+            activeAt: UpdatePhase.transferring,
+            value: phase == UpdatePhase.transferring ? fraction : null),
+        row('Confirm the new firmware', UpdatePhase.done,
+            activeAt: UpdatePhase.verifying),
+      ];
+    }
+    if (app.otaMethod == OtaMethod.onlineFetch) {
+      return [
+        row('Prepare download', UpdatePhase.staging,
+            activeAt: UpdatePhase.staging),
+        row('Download on repeater', UpdatePhase.readyToApply,
+            activeAt: UpdatePhase.transferring,
+            value: phase == UpdatePhase.transferring ? fraction : null),
+        row('Verify the image', UpdatePhase.readyToApply),
+        row('Commit update', UpdatePhase.done,
+            activeAt: UpdatePhase.readyToApply),
+      ];
+    }
+    return [
+      row('Compare with repeater', UpdatePhase.comparing,
+          activeAt: UpdatePhase.comparing),
+      row('Stage image', UpdatePhase.staging, activeAt: UpdatePhase.staging),
+      row('Transfer', UpdatePhase.readyToApply,
+          activeAt: UpdatePhase.transferring,
+          value: phase == UpdatePhase.transferring ? fraction : null),
+      row('Verify the image', UpdatePhase.readyToApply),
+      row('Commit update', UpdatePhase.done,
+          activeAt: UpdatePhase.readyToApply),
+    ];
+  }
+
+  String _statusText(AppState app, UpdatePhase phase, double fraction,
+      TransferProgress? progress, int totalBytes) {
+    if (phase == UpdatePhase.upToDate) {
+      return 'Already up to date. Nothing was staged.';
+    }
+    if (app.otaMethod == OtaMethod.wifi) {
+      if (app.wifiPreflight) {
+        return app.wifiProblem ?? 'Connect to the update page, then retry.';
+      }
+      if (phase == UpdatePhase.verifying) {
+        return 'Waiting for the repeater to come back…';
+      }
+      if (phase == UpdatePhase.transferring) {
+        final size = app.selectedImage?.length ?? 0;
+        return '${(fraction * 100).round()}% uploaded · '
+            '${formatBytes((size * fraction).round())} of ${formatBytes(size)}';
+      }
+      return 'Getting ready…';
+    }
+    if (app.otaMethod == OtaMethod.onlineFetch) {
+      final net = app.onlineNetStatus;
+      if (net != null) {
+        return '${net.phase.name}: ${formatBytes(net.received)} of '
+            '${formatBytes(net.size)}';
+      }
+      return 'Preparing the download on the repeater…';
+    }
+    if (progress == null) return 'Getting ready…';
+    return '${formatBytes(progress.literalBytesSent)} / '
+        '${formatBytes(totalBytes < progress.literalBytesSent ? progress.literalBytesSent : totalBytes)} sent · '
+        '${progress.retries} re-sends'
+        '${_etaSuffix(progress)}';
+  }
+
   Widget _buildFooter(BuildContext context, AppState app, UpdatePhase phase) {
     if (_paused) {
       return FilledButton.icon(
@@ -411,6 +454,14 @@ class _TransferScreenState extends State<TransferScreen> {
         onPressed: _retry,
         icon: const Icon(playIcon),
         label: const Text('Compare again'),
+      );
+    }
+    if (app.otaMethod != OtaMethod.lora &&
+        (phase == UpdatePhase.failed || _error != null)) {
+      return FilledButton.icon(
+        onPressed: _retry,
+        icon: const Icon(playIcon),
+        label: const Text('Retry'),
       );
     }
     switch (phase) {

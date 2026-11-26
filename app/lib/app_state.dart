@@ -10,6 +10,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:mesh_protocol/mesh_protocol.dart';
 import 'package:ota_core/ota_core.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:wifi_ota_core/wifi_ota_core.dart';
 
 import 'services/ble_device_link.dart';
 import 'services/firmware_library.dart';
@@ -17,6 +18,10 @@ import 'services/github_source.dart';
 import 'services/literal_compression.dart';
 import 'services/radio_plan.dart';
 import 'services/resume_controller.dart';
+import 'services/board_family.dart';
+import 'services/wifi_connector.dart';
+import 'services/wifi_ota_service.dart';
+import 'services/wifi_status.dart';
 
 export 'services/resume_controller.dart' show ResumeCheck;
 import 'services/resume_store.dart';
@@ -69,6 +74,17 @@ enum UpdatePhase {
   failed,
 }
 
+/// How the selected image reaches the repeater.
+enum OtaMethod { lora, wifi, onlineFetch }
+
+/// Which WiFi path the repeater offers. A repeater can only use one at a time,
+/// so the app chooses from read-only facts before any command is sent.
+enum WifiUploadMode { hotspot, lan }
+
+/// How strongly an update was proved. Stock firmware cannot report an image
+/// hash, so its WiFi update is only a version match.
+enum VerificationLevel { hash, versionOnly }
+
 /// True for the fork's retired `filter-v*` / `-filter-<sha>` naming. Used once
 /// at startup to drop library entries that can no longer identify a release.
 bool _hasRetiredNaming(String value) => value.toLowerCase().contains('filter');
@@ -79,8 +95,8 @@ bool _hasRetiredNaming(String value) => value.toLowerCase().contains('filter');
 Future<List<LibraryEntry>> cleanRetiredLibraryEntries(
     FirmwareLibrary library) async {
   final stale = (await library.list())
-      .where((e) =>
-          _hasRetiredNaming(e.version) || _hasRetiredNaming(e.fileName))
+      .where(
+          (e) => _hasRetiredNaming(e.version) || _hasRetiredNaming(e.fileName))
       .toList();
   for (final entry in stale) {
     await library.delete(entry);
@@ -115,6 +131,7 @@ class AppState extends ChangeNotifier {
   String? connectError;
   String companionName = '';
   String? _bleDeviceId;
+  BluetoothDevice? _bleDevice;
 
   /// Test seam: overrides the TCP link built by [connectTcp] (the screen
   /// cannot inject one). Null in production, where a real TcpDeviceLink is
@@ -129,6 +146,13 @@ class AppState extends ChangeNotifier {
 
   /// Test seam for the recovery probe; production builds a real controller.
   ResumeController Function(ResumePlan plan)? resumeControllerFactory;
+
+  /// Test seam for joining the repeater's hotspot; widget tests never run OS
+  /// network tooling.
+  WifiConnector? wifiConnectorFactory;
+
+  /// Test seam for the update page HTTP client.
+  WifiOtaClient? wifiClientFactory;
 
   RadioLink? _link;
   CompanionClient? _client;
@@ -169,6 +193,70 @@ class AppState extends ChangeNotifier {
   String? probeError;
 
   bool get otaSupported => nodeStatus != null;
+
+  // ---------------- update method ----------------
+
+  /// The operator's choice on the Radio step. LoRa is the default so an
+  /// existing wizard run is unchanged.
+  OtaMethod otaMethod = OtaMethod.lora;
+
+  /// True after Sign in falls back from a non-OTA (stock) repeater.
+  bool wifiOnlyMode = false;
+
+  /// `board` reply and its matched ESP32 environment, read on stock firmware.
+  String? boardReply;
+  String? stockBoardEnvironment;
+
+  /// Observer WiFi facts, read only. The SSID is a network name, never a key.
+  WifiLinkState wifiLink = WifiLinkState.unknown;
+  String? wifiSsid;
+
+  /// Which of the two mutually exclusive WiFi paths applies. Derived, never
+  /// stored, so a changed probe result cannot leave a stale choice behind.
+  WifiUploadMode get wifiMode =>
+      wifiLanAvailable ? WifiUploadMode.lan : WifiUploadMode.hotspot;
+
+  /// State for the WiFi upload and the observer's direct download.
+  Uri? wifiOtaUrl;
+  double wifiProgress = 0;
+  String? wifiProblem;
+  bool wifiPreflight = false;
+  WifiNetStatus? onlineNetStatus;
+  VerificationLevel verificationLevel = VerificationLevel.hash;
+
+  /// The observer reports online fetch with a feature bit; a stock repeater
+  /// never does.
+  bool get onlineFetchSupported => nodeInfo?.supportsOnlineFetch ?? false;
+
+  /// A fork ESP32 has the dual-slot OTA engine. A stock repeater qualifies
+  /// only when its `board` reply matches a known app-slot environment.
+  bool get wifiUploadSupported => wifiOnlyMode
+      ? stockBoardEnvironment != null
+      : (nodeInfo != null && nodeInfo!.slotSize > 0);
+
+  /// Stored credentials or a live station mean `start ota` serves on the LAN.
+  /// Otherwise it opens the `MeshCore-OTA` hotspot.
+  bool get wifiLanAvailable =>
+      !wifiOnlyMode &&
+      onlineFetchSupported &&
+      (wifiLink == WifiLinkState.connected || wifiSsid != null);
+
+  void setOtaMethod(OtaMethod method) {
+    if (otaMethod == method) return;
+    otaMethod = method;
+    clearWifiRun();
+    notifyListeners();
+  }
+
+  /// Drop the page address so the next attempt re-arms it. A failed preflight
+  /// keeps it, so Transfer's Retry does not start a second web server.
+  void clearWifiRun() {
+    wifiOtaUrl = null;
+    wifiProgress = 0;
+    wifiProblem = null;
+    wifiPreflight = false;
+    onlineNetStatus = null;
+  }
 
   // ---------------- firmware selection ----------------
 
@@ -393,6 +481,7 @@ class AppState extends ChangeNotifier {
     connectionPhase = ConnectionPhase.connecting;
     connectError = null;
     transportKind = 'ble';
+    _bleDevice = device;
     _bleDeviceId = device.remoteId.str;
     notifyListeners();
     try {
@@ -460,6 +549,25 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Restore the companion link after a WiFi network switch. Joining the
+  /// repeater's hotspot can drop a TCP link; BLE usually survives.
+  Future<void> reconnect() async {
+    final device = _bleDevice;
+    late final RadioLink link;
+    if (transportKind == 'ble' && device != null) {
+      final ble = BleDeviceLink(device: device);
+      await ble.connect();
+      link = ble;
+    } else {
+      link = tcpLinkFactory?.call(tcpHost, tcpPort) ??
+          TcpDeviceLink(host: tcpHost, port: tcpPort);
+      await link.connect();
+    }
+    // Adopt without disposing: the target and method must survive a network
+    // switch.
+    await _adoptLink(link);
+  }
+
   Future<void> _disposeLink() async {
     try {
       await _link?.disconnect();
@@ -479,6 +587,18 @@ class AppState extends ChangeNotifier {
     companionName = '';
     companionPreset = null;
     manualRoutePath = '';
+    _resetWifiFacts();
+  }
+
+  void _resetWifiFacts() {
+    otaMethod = OtaMethod.lora;
+    wifiOnlyMode = false;
+    boardReply = null;
+    stockBoardEnvironment = null;
+    wifiLink = WifiLinkState.unknown;
+    wifiSsid = null;
+    verificationLevel = VerificationLevel.hash;
+    clearWifiRun();
   }
 
   Future<void> _refreshContacts() async {
@@ -544,6 +664,7 @@ class AppState extends ChangeNotifier {
     manualRoutePath = '';
     manualRouteError = null;
     probeError = null;
+    _resetWifiFacts();
   }
 
   void selectTarget(Contact contact) {
@@ -568,14 +689,20 @@ class AppState extends ChangeNotifier {
     probeError = null;
     notifyListeners();
     try {
-      nodeStatus = await flow.probe(t, secret);
+      final status = await flow.probe(t, secret);
+      nodeStatus = status;
       // The handshake confirms the node's board and capabilities, but a node
-      // without it still updates (its `running=` stamp is the fallback).
-      nodeInfo = nodeStatus == null ? null : await flow.tryNodeInfo(t);
-      if (nodeStatus == null) {
-        probeError = 'This firmware does not speak the ota CLI '
-            '(expected a fork repeater build, e.g. '
-            'Xiao_S3_WIO_repeater-v<version>).';
+      // without it can still take a WiFi update.
+      nodeInfo = status == null ? null : await flow.tryNodeInfo(t);
+      wifiOnlyMode = status == null;
+      if (status == null) {
+        final board = (await _cliQuiet(t, 'board'))?.trim();
+        boardReply = board == null || board.isEmpty ? null : board;
+        stockBoardEnvironment = boardReply == null
+            ? null
+            : esp32EnvironmentForBoard(boardReply!, knownEnvironments);
+        probeError = 'This firmware does not speak the ota CLI. '
+            'A WiFi update may still be available for ESP32 boards.';
       } else {
         // The radio facts are only needed for the off-mesh transfer options;
         // old firmware answers neither, and neither query makes the probe fail.
@@ -598,6 +725,14 @@ class AppState extends ChangeNotifier {
                     ? false
                     : null);
         _prefillRadioPlan();
+        // Observer builds answer these read-only questions. Nothing here
+        // starts WiFi or opens the update page.
+        if (nodeInfo?.supportsOnlineFetch == true) {
+          wifiLink = parseWifiStatus(await _cliQuiet(t, 'get wifi.status'));
+          if (wifiLink != WifiLinkState.connected) {
+            wifiSsid = parseWifiSsid(await _cliQuiet(t, 'get wifi.ssid'));
+          }
+        }
         // A new node needs a fresh comparison against its own running image.
         if (_selectedImage != null) clearComparison();
       }
@@ -608,6 +743,7 @@ class AppState extends ChangeNotifier {
       radio2Enabled = null;
       radio2Status = null;
       radio2Preset = null;
+      _resetWifiFacts();
       probeError = '$e';
     } finally {
       probing = false;
@@ -1083,6 +1219,49 @@ class AppState extends ChangeNotifier {
   String? get selectedVersion =>
       selectedAsset?.version ?? selectedLibraryEntry?.version;
 
+  /// Version token accepted by `ota fetch ver`. The firmware strips a leading
+  /// `v` itself, but sending the bare token keeps the CLI reply readable.
+  String? get selectedVersionToken {
+    final version = selectedVersion;
+    if (version == null) return null;
+    return version.replaceFirst(RegExp(r'^[vV]'), '');
+  }
+
+  /// SHA-256 to hand to `ota fetch sha`. Release metadata wins; a SHA computed
+  /// from the just-downloaded image is the fallback when no sums were
+  /// published.
+  String? get selectedSha256 {
+    final published = selectedAsset?.sha256;
+    if (published != null) {
+      final hex = published.replaceFirst(RegExp(r'^sha256:'), '').toLowerCase();
+      if (hex.length == 64) return hex;
+    }
+    if (_selectedImage != null) return bytesToHex(sha256List(_selectedImage!));
+    final stored = selectedLibraryEntry?.sha256.toLowerCase();
+    if (stored != null && stored.length == 64) return stored;
+    return null;
+  }
+
+  int? get selectedImageSize =>
+      selectedAsset?.size ??
+      selectedLibraryEntry?.size ??
+      _selectedImage?.length;
+
+  /// Online fetch builds its download URL from the repeater's own environment,
+  /// so the selected image must be for that exact build.
+  bool get onlineFetchBoardMatches {
+    final env = selectedEnvironment;
+    final info = nodeInfo;
+    if (env == null || env == customEnvironment || info == null) return false;
+    return targetIdForEnvironment(env) == info.targetId;
+  }
+
+  bool get onlineFetchReady =>
+      onlineFetchSupported &&
+      onlineFetchBoardMatches &&
+      selectedVersionToken != null &&
+      selectedSha256 != null;
+
   /// The preset the node's live mesh runs on (falls back to the companion's —
   /// the same mesh when the update path works at all).
   LoRaPreset? get livePreset => nodePreset ?? companionPreset;
@@ -1230,6 +1409,198 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Upload the selected image through the repeater's built-in update page.
+  /// The WiFi path was chosen on the Radio step, so `start ota` is the first
+  /// command sent here and is never used for detection.
+  Future<void> runWifiUpload({required String version}) async {
+    final t = target;
+    final flow = _flow;
+    final image = _selectedImage;
+    if (t == null || flow == null || image == null) {
+      throw StateError('update not ready');
+    }
+    if (!wifiUploadSupported) {
+      throw UpdateFlowException(
+          'WiFi update is not available on this repeater');
+    }
+    cancelRequested = false;
+    wifiProblem = null;
+    wifiProgress = 0;
+    updatePhase = UpdatePhase.staging;
+    log_('opening the update page over WiFi');
+    notifyListeners();
+
+    final service = WifiOtaService(
+      (command) => flow.client.remoteCli(t, command),
+      client: wifiClientFactory ?? WifiOtaClient(),
+    );
+    late final Uri url;
+    late final WifiIdentity identity;
+    try {
+      // A failed preflight keeps the URL: Retry must not open a second server.
+      url = wifiOtaUrl ?? await service.startOta();
+      wifiOtaUrl = url;
+      identity = await service.identity(url);
+      if (!identity.isEsp32) {
+        throw const WifiOtaException(
+            'This board does not report ESP32. WiFi update is for ESP32 only.');
+      }
+    } on WifiIdentityUnreachable {
+      // The chosen path is not reachable from this device. Ask the operator
+      // to join it; never switch to the other path behind their back.
+      wifiPreflight = true;
+      String? instruction;
+      if (wifiMode == WifiUploadMode.hotspot) {
+        final connector = wifiConnectorFactory ??
+            (Platform.isAndroid || Platform.isIOS
+                ? const ManualWifiConnector()
+                : PlatformWifiConnector());
+        final joined = await connector.join('MeshCore-OTA');
+        if (joined == WifiJoinResult.joined) {
+          await reconnect();
+          try {
+            identity = await service.identity(url);
+          } on WifiOtaException catch (e) {
+            instruction = '${e.friendly} Join the hotspot, then retry.';
+          }
+        } else {
+          instruction = joined == WifiJoinResult.denied
+              ? 'The system refused the join. Join MeshCore-OTA in your device '
+                  'settings, then retry.'
+              : 'Join MeshCore-OTA in your device settings, then retry.';
+        }
+      } else {
+        instruction = 'Join the repeater\'s WiFi network on this device, then '
+            'retry. The update page is only on that network.';
+      }
+      if (instruction != null) {
+        wifiProblem = instruction;
+        updatePhase = UpdatePhase.failed;
+        notifyListeners();
+        throw UpdateFlowException(instruction);
+      }
+    } catch (e) {
+      final message = e is WifiOtaException
+          ? e.friendly
+          : 'WiFi update could not start: $e';
+      wifiProblem = message;
+      updatePhase = UpdatePhase.failed;
+      notifyListeners();
+      throw UpdateFlowException(message);
+    }
+
+    wifiPreflight = false;
+    updatePhase = UpdatePhase.transferring;
+    notifyListeners();
+    try {
+      await service.upload(
+        base: url,
+        image: image,
+        md5Hex: imageMd5(image),
+        filename: '${version.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_')}.bin',
+        onProgress: (sent, total) {
+          wifiProgress = total == 0 ? 0 : sent / total;
+          notifyListeners();
+        },
+        shouldCancel: () => cancelRequested,
+      );
+    } on WifiUploadCancelled {
+      const message = 'The upload was stopped.';
+      wifiProblem = message;
+      updatePhase = UpdatePhase.failed;
+      notifyListeners();
+      throw UpdateFlowException(message);
+    } on WifiOtaException catch (e) {
+      wifiProblem = e.friendly;
+      updatePhase = UpdatePhase.failed;
+      notifyListeners();
+      throw UpdateFlowException(e.friendly);
+    }
+
+    // ElegantOTA reboots the node itself. There is no verified spare slot and
+    // no `ota apply`; prove the result with a version read and, on fork
+    // firmware, the running image hash.
+    updatePhase = UpdatePhase.verifying;
+    notifyListeners();
+    final matched = await flow.awaitVersion(
+      t,
+      adminPassword,
+      version,
+      expectedImageSha256: sha256List(image),
+    );
+    verificationLevel =
+        wifiOnlyMode ? VerificationLevel.versionOnly : VerificationLevel.hash;
+    verifyMatched = matched;
+    rolledBack = false;
+    updatePhase = matched ? UpdatePhase.done : UpdatePhase.failed;
+    if (!matched) {
+      wifiProblem = 'The repeater did not come back on the new firmware. '
+          'Check it before trying again.';
+    }
+    notifyListeners();
+  }
+
+  /// Observer-only download: the repeater fetches the release itself, verifies
+  /// it into its spare slot, and waits for the same commit step as LoRa.
+  Future<void> runOnlineFetch({required String version}) async {
+    final t = target;
+    final flow = _flow;
+    if (t == null || flow == null) throw StateError('update not ready');
+    if (!onlineFetchReady) {
+      throw UpdateFlowException(
+          'Choose a release with a known SHA-256 for this repeater first');
+    }
+    final token = selectedVersionToken!;
+    final sha = selectedSha256!;
+    cancelRequested = false;
+    onlineNetStatus = null;
+    updatePhase = UpdatePhase.staging;
+    log_('arming the download of $token on the repeater');
+    notifyListeners();
+
+    await flow.clearStaleStaging(t);
+    await flow.startOnlineFetch(t, token, sha);
+    updatePhase = UpdatePhase.transferring;
+    notifyListeners();
+
+    final deadline = DateTime.now().add(const Duration(minutes: 10));
+    try {
+      while (DateTime.now().isBefore(deadline) && !cancelRequested) {
+        final net = await flow.netStatus(t);
+        if (net != null) {
+          onlineNetStatus = net;
+          notifyListeners();
+          if (net.phase == WifiNetPhase.error) {
+            final status = await flow.status(t);
+            final detail =
+                status == null ? 'error ${net.err}' : otaErrLabel(status.err);
+            throw UpdateFlowException('the download failed: $detail');
+          }
+        }
+        final status = await flow.status(t);
+        if (status?.state == OtaPhase.error) {
+          throw UpdateFlowException(
+              'the download failed: ${otaErrLabel(status!.err)}');
+        }
+        if (status?.state == OtaPhase.ready) break;
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
+      if (cancelRequested) {
+        await flow.abortQuietly(t);
+        throw UpdateFlowException('the download was stopped');
+      }
+      await flow.awaitReady(t);
+      updatePhase = UpdatePhase.readyToApply;
+      log_('the repeater downloaded and verified the image');
+      notifyListeners();
+    } catch (e) {
+      updatePhase = UpdatePhase.failed;
+      notifyListeners();
+      if (e is UpdateFlowException) rethrow;
+      throw UpdateFlowException('the download failed: $e');
+    }
+  }
+
   /// Full pipeline: move the radio if asked, stage → transfer → report ready,
   /// then put the radio back. Throws on any failure and leaves [updatePhase]
   /// at `failed` (or `idle` after a cancel) so the screen can show the way
@@ -1237,10 +1608,16 @@ class AppState extends ChangeNotifier {
   Future<void> runUpdate({required String version, ResumeRun? resume}) async {
     final t = target;
     final flow = _flow;
-    final image = _selectedImage;
-    if (t == null || flow == null || image == null) {
+    if (t == null || flow == null) {
       throw StateError('update not ready');
     }
+    // WiFi paths do not touch the radio, compare hashes, or arm an op stream.
+    if (otaMethod == OtaMethod.wifi) return runWifiUpload(version: version);
+    if (otaMethod == OtaMethod.onlineFetch) {
+      return runOnlineFetch(version: version);
+    }
+    final image = _selectedImage;
+    if (image == null) throw StateError('update not ready');
     final planProblem = radioPlanProblem;
     if (planProblem != null) {
       throw UpdateFlowException('radio settings: $planProblem');
@@ -1892,8 +2269,14 @@ class AppState extends ChangeNotifier {
     final flow = _flow;
     if (t == null || flow == null) throw StateError('no target');
     final image = selectedImage;
-    final expectedSha = image == null ? null : sha256List(image);
-    final expectedSize = image?.length ?? 0;
+    // Online fetch needs no local file, so the selection supplies the digest
+    // and size the node verified while downloading.
+    final shaHex = selectedSha256;
+    final expectedSha = image != null
+        ? sha256List(image)
+        : (shaHex == null ? null : hexToBytes(shaHex));
+    final expectedSize = image?.length ?? selectedImageSize ?? 0;
+    verificationLevel = VerificationLevel.hash;
     verifyMatched = false;
     rolledBack = false;
     applyOutcome = null;

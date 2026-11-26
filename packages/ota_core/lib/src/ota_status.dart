@@ -119,6 +119,13 @@ String otaErrLabel(int err) => switch (err) {
       otaErrToken => 'arm token missing or rejected',
       otaErrEnd => 'esp_ota_end() failed after a clean verify',
       otaErrCompress => 'compressed literal stream failed',
+      10 => 'online fetch configuration error',
+      11 => 'the repeater could not join WiFi',
+      12 => 'the repeater could not read the network clock',
+      13 => 'a secure connection could not be opened',
+      14 => 'the firmware download was refused',
+      15 => 'the firmware download was incomplete',
+      16 => 'the repeater ran out of memory',
       _ => 'unknown error $err',
     };
 

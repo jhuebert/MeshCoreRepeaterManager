@@ -50,13 +50,14 @@ OtaNodeInfo nodeInfo({
   String runningVersion = 'v1.1.0-rc5',
   Uint8List? runningSha256,
   int slotSize = 3342336,
+  int? features,
 }) =>
     OtaNodeInfo(
       wireVersion: otaWireVersion,
       targetId: targetId,
       slotSize: slotSize,
       maxLiteral: 173,
-      features: otaFeatDelta | otaFeatApply | otaFeatBlockHash,
+      features: features ?? (otaFeatDelta | otaFeatApply | otaFeatBlockHash),
       runningVersion: runningVersion,
       runningSha256: runningSha256 ?? Uint8List(32),
     );
