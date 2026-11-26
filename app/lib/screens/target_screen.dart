@@ -7,6 +7,10 @@ import '../theme.dart';
 import '../widgets/wizard.dart';
 import 'login_screen.dart';
 
+/// Contact flag for a favourite node (the firmware's `ContactInfo::isFav()`).
+/// The app never changes it; it only uses it to order the picker.
+const int _contactFlagFavorite = 0x01;
+
 /// Step 2: choose the node to update. The admin login is deliberately a
 /// separate step — with a long contact list the password field sat below the
 /// fold, and the key can be (and the pubkey tab makes it easy to) chosen
@@ -21,11 +25,14 @@ class TargetScreen extends StatefulWidget {
 class _TargetScreenState extends State<TargetScreen> {
   bool _showAll = false;
   String _manualKey = '';
+  String _search = '';
   final _manualController = TextEditingController();
+  final _searchController = TextEditingController();
 
   @override
   void dispose() {
     _manualController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -73,22 +80,56 @@ class _TargetScreenState extends State<TargetScreen> {
     final repeaters =
         app.contacts.where((c) => c.advType == advTypeRepeater).toList();
     final visible = _showAll ? app.contacts : repeaters;
+    final query = _search.trim().toLowerCase();
+    final keyQuery = query.replaceAll(RegExp(r'\s'), '');
+    final matches = _sortContacts(
+      visible.where((c) => _matches(c, query, keyQuery)),
+    );
 
     return ListView(
       padding: const EdgeInsets.only(bottom: 16),
       children: [
-        if (visible.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: TextField(
+            key: const Key('repeater-search'),
+            controller: _searchController,
+            decoration: InputDecoration(
+              labelText: 'Search repeaters',
+              hintText: 'Name or public key',
+              prefixIcon: const Icon(Icons.search),
+              isDense: true,
+              suffixIcon: _search.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Clear search',
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _search = '');
+                      },
+                    ),
+            ),
+            autocorrect: false,
+            enableSuggestions: false,
+            onChanged: (value) => setState(() => _search = value),
+          ),
+        ),
+        if (matches.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
-              'No repeater contacts on this companion yet. Advertise from the '
-              'repeater (or wait for its periodic advert), or use the Public '
-              'key tab.',
-              style: TextStyle(
+              _search.trim().isEmpty
+                  ? 'No repeater contacts on this companion yet. Advertise '
+                      'from the repeater (or wait for its periodic advert), '
+                      'or use the Public key tab.'
+                  : 'No repeaters match "$_search". Try another name or part '
+                      'of a key, or use the Public key tab.',
+              style: const TextStyle(
                   color: OtaTheme.textMuted, fontSize: 12, height: 1.4),
             ),
           ),
-        ...visible.map(
+        ...matches.map(
           (c) => Card(
             color: _sameKey(selected, c) ? OtaTheme.surfaceHigh : null,
             child: ListTile(
@@ -100,7 +141,7 @@ class _TargetScreenState extends State<TargetScreen> {
               ),
               title: Text(c.name.isNotEmpty ? c.name : '(unnamed)'),
               subtitle: Text(
-                _pathLabel(c),
+                _subtitle(c),
                 style: const TextStyle(color: OtaTheme.textMuted, fontSize: 11),
               ),
               trailing: _sameKey(selected, c)
@@ -123,6 +164,47 @@ class _TargetScreenState extends State<TargetScreen> {
           ),
       ],
     );
+  }
+
+  /// Favourites and nodes with a saved route come first, so the ones the
+  /// companion can actually reach are visible without scrolling. Within a
+  /// group the order is alphabetical, with unnamed contacts last.
+  List<Contact> _sortContacts(Iterable<Contact> contacts) {
+    final sorted = contacts.toList();
+    sorted.sort((a, b) {
+      final rank = _rank(a).compareTo(_rank(b));
+      if (rank != 0) return rank;
+      final name = _sortName(a).compareTo(_sortName(b));
+      if (name != 0) return name;
+      return a.publicKeyHex.compareTo(b.publicKeyHex);
+    });
+    return sorted;
+  }
+
+  /// Lower rank means higher in the list. A zero-hop route sorts ahead of a
+  /// multi-hop route because it needs no relay.
+  int _rank(Contact c) {
+    final favourite = c.flags & _contactFlagFavorite != 0;
+    final hops = c.hasDirectRoute ? c.outPathLen & 0x3F : -1;
+    if (favourite) return hops == 0 ? 0 : (hops > 0 ? 1 : 2);
+    return hops == 0 ? 3 : (hops > 0 ? 4 : 5);
+  }
+
+  String _sortName(Contact c) {
+    final name = c.name.trim().toLowerCase();
+    return name.isEmpty ? '\uffff' : name;
+  }
+
+  bool _matches(Contact c, String query, String keyQuery) {
+    if (query.isEmpty) return true;
+    if (c.name.toLowerCase().contains(query)) return true;
+    // A single hex digit matches almost every key, so require a short run.
+    return keyQuery.length >= 2 && c.publicKeyHex.contains(keyQuery);
+  }
+
+  String _subtitle(Contact c) {
+    final favourite = c.flags & _contactFlagFavorite != 0;
+    return favourite ? 'favorite, ${_pathLabel(c)}' : _pathLabel(c);
   }
 
   Widget _buildManualTab(AppState app) {

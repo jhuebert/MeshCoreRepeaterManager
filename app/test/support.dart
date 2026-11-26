@@ -14,8 +14,13 @@ import 'package:meshcore_repeater_manager/theme.dart';
 
 /// Shared fixtures for the app's widget tests. Screens bind to [AppState]
 /// public fields, so a test can build any screen state without a companion.
+/// [hops] is -1 for a contact with no saved route. [favorite] sets the
+/// companion's contact flag bit 0 (the firmware's `ContactInfo::isFav()`).
 Contact contact(String name,
-    {int advType = advTypeRepeater, List<int>? key, int hops = 0}) {
+    {int advType = advTypeRepeater,
+    List<int>? key,
+    int hops = 0,
+    bool favorite = false}) {
   final publicKey = key == null
       ? Uint8List.fromList(List.generate(32, (i) => i + 1))
       : Uint8List.fromList(key);
@@ -23,8 +28,9 @@ Contact contact(String name,
     publicKey: publicKey,
     name: name,
     advType: advType,
+    flags: favorite ? 0x01 : 0,
     outPathLen: hops,
-    outPath: Uint8List(hops),
+    outPath: Uint8List(hops < 0 ? 0 : hops),
   );
 }
 

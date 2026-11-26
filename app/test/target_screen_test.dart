@@ -121,7 +121,100 @@ void main() {
     expect(find.text('chatty companion'), findsOneWidget);
     expect(find.text('Show repeaters only'), findsOneWidget);
   });
+
+  testWidgets('favorites and reachable repeaters sort to the top',
+      (tester) async {
+    final app = AppState();
+    app.contacts = [
+      contact('zeta', key: keyOf(1), hops: -1),
+      contact('alpha', key: keyOf(2), hops: 2),
+      contact('favorite far', key: keyOf(3), hops: -1, favorite: true),
+      contact('favorite near', key: keyOf(4), favorite: true),
+      contact('bravo', key: keyOf(5)),
+      contact('chatty companion', key: keyOf(6), advType: advTypeChat),
+    ];
+
+    // Enough room for every row to be built by the lazy list.
+    await tester.binding.setSurfaceSize(const Size(800, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(wrap(app, const TargetScreen()));
+    await tester.pump();
+
+    expect(_visibleNames(tester), [
+      'favorite near',
+      'favorite far',
+      'bravo',
+      'alpha',
+      'zeta',
+    ]);
+    expect(find.text('favorite, direct'), findsOneWidget);
+    expect(find.text('favorite, no saved route'), findsOneWidget);
+    expect(find.text('chatty companion'), findsNothing);
+  });
+
+  testWidgets('search filters by name or public key', (tester) async {
+    final app = AppState();
+    app.contacts = [
+      contact('riley', key: keyOf(1)),
+      contact('harper', key: keyOf(2)),
+    ];
+    await tester.pumpWidget(wrap(app, const TargetScreen()));
+    await tester.pump();
+
+    await tester.enterText(find.byKey(const Key('repeater-search')), 'HAR');
+    await tester.pump();
+    expect(_visibleNames(tester), ['harper']);
+
+    // Clearing the search restores the sorted full list.
+    await tester.enterText(find.byKey(const Key('repeater-search')), '');
+    await tester.pump();
+    expect(_visibleNames(tester), ['harper', 'riley']);
+
+    final keyPrefix = bytesToHex(keyOf(2)).substring(0, 8);
+    await tester.enterText(
+        find.byKey(const Key('repeater-search')), keyPrefix.toUpperCase());
+    await tester.pump();
+    expect(_visibleNames(tester), ['harper']);
+  });
+
+  testWidgets('contacts with the same name have a stable order',
+      (tester) async {
+    final app = AppState();
+    app.contacts = [
+      contact('same', key: keyOf(8)),
+      contact('same', key: keyOf(9)),
+    ];
+    await tester.pumpWidget(wrap(app, const TargetScreen()));
+    await tester.pump();
+
+    await tester.tap(find.byType(ListTile).first);
+    await tester.pump();
+    expect(app.target!.publicKeyHex, bytesToHex(keyOf(9)));
+  });
+
+  testWidgets('an unmatched search explains how to add a node', (tester) async {
+    final app = AppState();
+    app.contacts = [contact('riley')];
+    await tester.pumpWidget(wrap(app, const TargetScreen()));
+    await tester.pump();
+
+    await tester.enterText(find.byKey(const Key('repeater-search')), 'nobody');
+    await tester.pump();
+
+    expect(find.text('riley'), findsNothing);
+    expect(find.textContaining('No repeaters match'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Clear search'));
+    await tester.pump();
+    expect(find.text('riley'), findsOneWidget);
+  });
 }
+
+/// Names of the contact rows currently visible in the repeater tab.
+List<String> _visibleNames(WidgetTester tester) => tester
+    .widgetList<ListTile>(find.byType(ListTile))
+    .map((tile) => (tile.title! as Text).data!)
+    .toList();
 
 /// A distinct 32-byte key for a fixture contact.
 List<int> keyOf(int seed) =>

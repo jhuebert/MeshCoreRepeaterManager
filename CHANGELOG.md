@@ -8,6 +8,9 @@ All notable changes to MeshCoreRepeaterManager are documented here. The format f
 
 ### Added
 
+- **An easier repeater picker.** Favorites and repeaters with a saved route are
+  listed first, in name order within each group. The list can be searched by
+  name or public key, and a favorite is labelled in its row.
 - **WiFi update methods on the Radio step.** An operator can now send the
   chosen image through the repeater's built-in update page instead of over
   LoRa. The app chooses between the repeater's `MeshCore-OTA` hotspot and the

@@ -77,8 +77,11 @@ no longer need.
 
 ![Pick a repeater](docs/images/02-repeater.png)
 
-The **Repeaters** tab lists repeaters your companion knows. For one that is
-not in its list, use the **Public key** tab and paste its 64-character key.
+The **Repeaters** tab lists repeaters your companion knows. Favorites you
+starred on the companion and repeaters with a saved route come first, then the
+rest in name order. Use **Search repeaters** to find one by name or public key.
+For one that is not in its list, use the **Public key** tab and paste its
+64-character key.
 
 ### 3. Sign in
 
